@@ -1,0 +1,66 @@
+@using System.Globalization
+@using DuoRico.Pro.Models
+
+@inject ITransactionService TransactionService
+
+<MudPaper Class="pa-4 mt-4" Elevation="3">
+    <MudText Typo="Typo.h5" Class="mb-4" Color="Color.Primary">
+        <MudIcon Icon="@Icons.Material.Filled.Receipt" Class="mr-2" /> 
+        Transações (@Month/@Year)
+    </MudText>
+
+    <MudTable Items="@_transactions" 
+              Loading="@(_isLoading)" 
+              Dense="true" 
+              Hover="true" 
+              Striped="true" 
+              Elevation="0"
+              NoItemsText="Nenhuma transação encontrada.">
+        
+        <HeaderContent>
+            <MudTh>Descrição</MudTh>
+            <MudTh>Categoria</MudTh>
+            <MudTh>Estado</MudTh>
+            <MudTh Style="text-align: right">Valor</MudTh>
+        </HeaderContent>
+        
+        <RowTemplate>
+            <MudTd DataLabel="Descrição">
+                <MudText Typo="Typo.body2" Style="font-weight: 600">@context.Description</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@context.CreatedAt.ToString("dd/MM/yyyy")</MudText>
+            </MudTd>
+            <MudTd DataLabel="Categoria">@context.Category</MudTd>
+            <MudTd DataLabel="Estado">
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(context.IsPaid ? Color.Success : Color.Default)">
+                    @(context.IsPaid ? "Pago" : "Pendente")
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Valor" Style="text-align: right">
+                <MudText Color="@(context.Type == TransactionType.Income ? Color.Success : Color.Error)" Style="font-weight: 700">
+                    @context.Amount.ToString("C", CultureInfo.GetCultureInfo("pt-BR"))
+                </MudText>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+</MudPaper>
+
+@code {
+    [Parameter] public int Month { get; set; } = DateTime.Now.Month;
+    [Parameter] public int Year { get; set; } = DateTime.Now.Year;
+
+    private List<TransactionDto> _transactions = new();
+    private bool _isLoading = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _isLoading = true;
+        try 
+        {
+            _transactions = await TransactionService.GetCoupleTransactionsForPeriodAsync(Month, Year);
+        }
+        finally 
+        {
+            _isLoading = false;
+        }
+    }
+}

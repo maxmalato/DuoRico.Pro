@@ -1,7 +1,11 @@
 ﻿@page "/"
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Duo Rico - Dashboard</PageTitle>
 
-<h1>Hello, world!</h1>
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h4" GutterBottom="true">Dashboard</MudText>
+    <MudText Typo="Typo.body1" Class="mb-8">Bem-vindo ao novo Duo Rico Pro.</MudText>
 
-Welcome to your new app.
+    <TransactionTable />
+    
+</MudContainer>
