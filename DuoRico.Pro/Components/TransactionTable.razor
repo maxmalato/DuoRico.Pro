@@ -2,24 +2,43 @@
 @using DuoRico.Pro.Models
 
 @inject ITransactionService TransactionService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
 
-<MudPaper Class="pa-4 mt-4" Elevation="3">
-    <MudText Typo="Typo.h5" Class="mb-4" Color="Color.Primary">
-        <MudIcon Icon="@Icons.Material.Filled.Receipt" Class="mr-2" /> 
-        Transações (@Month/@Year)
-    </MudText>
+<MudPaper Class="pa-3 pa-sm-4 mt-4" Elevation="3">
+    
+    @* Cabeçalho Responsivo *@
+    <MudToolBar DisablePadding="true" Class="mb-4">
+        <MudText Typo="Typo.h5" Color="Color.Primary" Class="d-flex align-center">
+            <MudIcon Icon="@Icons.Material.Filled.Receipt" Class="mr-2" /> 
+            <span class="d-none d-sm-inline">Transações (@Month/@Year)</span>
+            <span class="d-inline d-sm-none">@Month/@Year</span>
+        </MudText>
+        <MudSpacer />
+        
+        @* Botão visível APENAS em Desktop/Tablet *@
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenNewTransactionDialog" Class="d-none d-sm-flex">
+            Nova Transação
+        </MudButton>
+        
+        @* Botão pequeno (apenas ícone) visível APENAS no Celular *@
+        <MudIconButton Variant="Variant.Filled" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" OnClick="OpenNewTransactionDialog" Class="d-flex d-sm-none" Size="Size.Small" />
+    </MudToolBar>
 
+    @* Tabela com rolagem horizontal ativada para não quebrar o layout *@
     <MudTable Items="@_transactions" 
               Loading="@(_isLoading)" 
               Dense="true" 
               Hover="true" 
               Striped="true" 
               Elevation="0"
-              NoItemsText="Nenhuma transação encontrada.">
+              HorizontalScrollbar="true"
+              NoItemsText="Nenhuma transação encontrada para este mês.">
         
         <HeaderContent>
             <MudTh>Descrição</MudTh>
-            <MudTh>Categoria</MudTh>
+            @* A coluna de Categoria some em telas muito pequenas (celular) *@
+            <MudTh Class="d-none d-sm-table-cell">Categoria</MudTh>
             <MudTh>Estado</MudTh>
             <MudTh Style="text-align: right">Valor</MudTh>
         </HeaderContent>
@@ -29,10 +48,10 @@
                 <MudText Typo="Typo.body2" Style="font-weight: 600">@context.Description</MudText>
                 <MudText Typo="Typo.caption" Color="Color.Secondary">@context.CreatedAt.ToString("dd/MM/yyyy")</MudText>
             </MudTd>
-            <MudTd DataLabel="Categoria">@context.Category</MudTd>
+            <MudTd DataLabel="Categoria" Class="d-none d-sm-table-cell">@context.Category</MudTd>
             <MudTd DataLabel="Estado">
                 <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(context.IsPaid ? Color.Success : Color.Default)">
-                    @(context.IsPaid ? "Pago" : "Pendente")
+                    @(context.IsPaid ? "Pago" : "Pend.")
                 </MudChip>
             </MudTd>
             <MudTd DataLabel="Valor" Style="text-align: right">
@@ -61,6 +80,32 @@
         finally 
         {
             _isLoading = false;
+        }
+    }
+
+    private async Task OpenNewTransactionDialog()
+    {
+        // DialogOptions ajustado para preencher a tela em celulares se necessário
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        
+        var dialog = await DialogService.ShowAsync<TransactionDialog>("Nova Transação", options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            var newTransaction = (Transaction)result.Data;
+            
+            var success = await TransactionService.CreateTransactionAsync(newTransaction);
+            
+            if (success)
+            {
+                Snackbar.Add("Transação registrada com sucesso!", Severity.Success);
+                await OnParametersSetAsync(); 
+            }
+            else
+            {
+                Snackbar.Add("Erro ao registrar. Você está logado e faz parte de um Casal?", Severity.Error);
+            }
         }
     }
 }

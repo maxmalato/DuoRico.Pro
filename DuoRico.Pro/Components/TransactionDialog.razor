@@ -1,0 +1,53 @@
+@using DuoRico.Pro.Models
+@using System.Globalization
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="Transaction.Description" Label="Descrição" Required="true" RequiredError="A descrição é obrigatória" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                
+                <MudItem xs="12" sm="6">
+                    <MudNumericField @bind-Value="Transaction.Amount" Label="Valor" Format="N2" Culture="@(new CultureInfo("pt-BR"))" Required="true" Min="0.01m" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect @bind-Value="Transaction.Type" Label="Tipo" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        <MudSelectItem Value="@TransactionType.Income">Receita (Entrada)</MudSelectItem>
+                        <MudSelectItem Value="@TransactionType.Expense">Despesa (Saída)</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="Transaction.Category" Label="Categoria" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="12" sm="6" Class="d-flex align-center">
+                    <MudSwitch T="bool" @bind-Value="Transaction.IsPaid" Color="Color.Success">Pago / Concluído</MudSwitch>
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Class="px-4">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Class="px-6">Salvar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public Transaction Transaction { get; set; } = new();
+
+    private MudForm _form = null!;
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Submit()
+    {
+        await _form.Validate();
+        if (_form.IsValid)
+        {
+            MudDialog.Close(DialogResult.Ok(Transaction));
+        }
+    }
+}
