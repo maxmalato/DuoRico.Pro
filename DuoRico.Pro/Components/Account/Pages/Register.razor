@@ -28,6 +28,11 @@
             <hr />
             <ValidationSummary class="text-danger" role="alert" />
             <div class="form-floating mb-3">
+                <InputText @bind-Value="Input.Name" id="Input.Name" class="form-control" autocomplete="name" aria-required="true" placeholder="João da Silva" />
+                <label for="Input.Name">Nome</label>
+                <ValidationMessage For="() => Input.Name" class="text-danger" />
+            </div>
+            <div class="form-floating mb-3">
                 <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
                 <label for="Input.Email">Email</label>
                 <ValidationMessage For="() => Input.Email" class="text-danger" />
@@ -73,6 +78,9 @@
     public async Task RegisterUser(EditContext editContext)
     {
         var user = CreateUser();
+        
+        user.Name = Input.Name;
+        user.CoupleId = Guid.NewGuid();
 
         await UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
         var emailStore = GetEmailStore();
@@ -133,20 +141,24 @@
 
     private sealed class InputModel
     {
-        [Required]
+        [Required(ErrorMessage = "O nome é obrigatório.")]
+        [Display(Name = "Nome")]
+        public string Name { get; set; } = "";
+        
+        [Required(ErrorMessage = "O e-mail é obrigatório")]
         [EmailAddress]
         [Display(Name = "Email")]
         public string Email { get; set; } = "";
 
         [Required]
-        [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [StringLength(100, ErrorMessage = "O {0} deve ter pelo menos {2} e no máximo {1} caracteres de comprimento.", MinimumLength = 6)]
         [DataType(DataType.Password)]
-        [Display(Name = "Password")]
+        [Display(Name = "Senha")]
         public string Password { get; set; } = "";
 
         [DataType(DataType.Password)]
-        [Display(Name = "Confirm password")]
-        [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+        [Display(Name = "Confirmar senha")]
+        [Compare("Password", ErrorMessage = "As senhas precisam ser iguais. ")]
         public string ConfirmPassword { get; set; } = "";
     }
 }

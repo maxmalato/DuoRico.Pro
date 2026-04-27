@@ -7,26 +7,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DuoRico.Pro.Services;
 
-public class TransactionService : ITransactionService
+public class TransactionService(
+    ApplicationDbContext context,
+    IHttpContextAccessor httpContextAccessor,
+    UserManager<ApplicationUser> userManager)
+    : ITransactionService
 {
-    private readonly ApplicationDbContext _context;
-    private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly UserManager<ApplicationUser> _userManager;
-
-    public TransactionService(ApplicationDbContext context, IHttpContextAccessor httpContextAccessor, UserManager<ApplicationUser> userManager)
-    {
-        _context = context;
-        _httpContextAccessor = httpContextAccessor;
-        _userManager = userManager;
-    }
-
     public async Task<List<Transaction>> GetCoupleTransactionsAsync()
     {
         var currentUser = await GetCurrentUserAsync();
 
         if (currentUser?.CoupleId == null) return new List<Transaction>();
 
-        return await _context.Transactions
+        return await context.Transactions
             .Where(t => t.User!.CoupleId == currentUser.CoupleId)
             .ToListAsync();
     }
@@ -34,16 +27,15 @@ public class TransactionService : ITransactionService
     public async Task<bool> CreateTransactionAsync(Transaction transaction)
     {
         var currentUser = await GetCurrentUserAsync();
-        if (currentUser == null || currentUser.CoupleId == null)
+        if (currentUser?.CoupleId == null)
             return false;
 
         transaction.Id = Guid.NewGuid();
         transaction.UserId = currentUser.Id;
         transaction.CreatedAt = DateTime.UtcNow;
-        // Outras validações...
 
-        _context.Transactions.Add(transaction);
-        await _context.SaveChangesAsync();
+        context.Transactions.Add(transaction);
+        await context.SaveChangesAsync();
         return true;
     }
 
@@ -52,7 +44,7 @@ public class TransactionService : ITransactionService
         var currentUser = await GetCurrentUserAsync();
         if (currentUser == null) return false;
 
-        var existing = await _context.Transactions
+        var existing = await context.Transactions
             .FirstOrDefaultAsync(t => t.Id == transaction.Id && t.User!.CoupleId == currentUser.CoupleId);
 
         if (existing == null) return false;
@@ -65,7 +57,7 @@ public class TransactionService : ITransactionService
         existing.IsPaid = transaction.IsPaid;
         // Outras atualizações...
 
-        await _context.SaveChangesAsync();
+        await context.SaveChangesAsync();
         return true;
     }
 
@@ -74,23 +66,23 @@ public class TransactionService : ITransactionService
         var currentUser = await GetCurrentUserAsync();
         if (currentUser == null) return false;
 
-        var transaction = await _context.Transactions
+        var transaction = await context.Transactions
             .FirstOrDefaultAsync(t => t.Id == transactionId && t.User!.CoupleId == currentUser.CoupleId);
 
         if (transaction == null) return false;
 
-        _context.Transactions.Remove(transaction);
-        await _context.SaveChangesAsync();
+        context.Transactions.Remove(transaction);
+        await context.SaveChangesAsync();
         return true;
     }
 
     private async Task<ApplicationUser?> GetCurrentUserAsync()
     {
-        var principal = _httpContextAccessor.HttpContext?.User;
+        var principal = httpContextAccessor.HttpContext?.User;
 
         if (principal == null) return null;
 
-        return await _userManager.GetUserAsync(principal);
+        return await userManager.GetUserAsync(principal);
     }
 
     // Buscar transações do casal autenticado por filtro (mês e ano)
@@ -101,7 +93,7 @@ public class TransactionService : ITransactionService
         if (currentUser?.CoupleId == null)
             return new List<TransactionDto>();
 
-        return await _context.Transactions
+        return await context.Transactions
             .Where(t => t.User!.CoupleId == currentUser.CoupleId &&
                         t.Month == month &&
                         t.Year == year)
@@ -124,7 +116,7 @@ public class TransactionService : ITransactionService
     public async Task<TransactionSummaryDto> GetSummaryForPeriodAsync(Guid coupleId, int month, int year)
     {
         // Calcula a soma das receitas diretamente no banco de dados
-        var totalIncome = await _context.Transactions
+        var totalIncome = await context.Transactions
             .Where(t => t.User!.CoupleId == coupleId &&
                         t.Type == TransactionType.Income &&
                         t.Month == month &&
@@ -132,7 +124,7 @@ public class TransactionService : ITransactionService
             .SumAsync(t => t.Amount);
 
         // Calcula a soma das despesas diretamente no banco de dados
-        var totalExpense = await _context.Transactions
+        var totalExpense = await context.Transactions
             .Where(t => t.User!.CoupleId == coupleId &&
                         t.Type == TransactionType.Expense &&
                         t.Month == month &&

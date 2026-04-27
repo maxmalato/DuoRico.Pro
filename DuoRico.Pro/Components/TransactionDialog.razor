@@ -6,39 +6,72 @@
         <MudForm @ref="_form">
             <MudGrid>
                 <MudItem xs="12">
-                    <MudTextField @bind-Value="Transaction.Description" Label="Descrição" Required="true" RequiredError="A descrição é obrigatória" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudTextField @bind-Value="Transaction.Description" Label="Descrição" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
                 
                 <MudItem xs="12" sm="6">
                     <MudNumericField @bind-Value="Transaction.Amount" Label="Valor" Format="N2" Culture="@(new CultureInfo("pt-BR"))" Required="true" Min="0.01m" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudSelect @bind-Value="Transaction.Type" Label="Tipo" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense">
-                        <MudSelectItem Value="@TransactionType.Income">Receita (Entrada)</MudSelectItem>
-                        <MudSelectItem Value="@TransactionType.Expense">Despesa (Saída)</MudSelectItem>
+                    <MudSelect @bind-Value="Transaction.Category" Label="Categoria" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        <MudSelectItem Value="@("Cartão de Crédito")">Cartão de Crédito</MudSelectItem>
+                        <MudSelectItem Value="@("Alimentação")">Alimentação</MudSelectItem>
+                        <MudSelectItem Value="@("Moradia")">Moradia</MudSelectItem>
+                        <MudSelectItem Value="@("Transporte")">Transporte</MudSelectItem>
+                        <MudSelectItem Value="@("Lazer")">Lazer</MudSelectItem>
                     </MudSelect>
                 </MudItem>
                 
-                <MudItem xs="12" sm="6">
-                    <MudTextField @bind-Value="Transaction.Category" Label="Categoria" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <MudItem xs="12" sm="4">
+                    <MudSelect @bind-Value="Transaction.Month" Label="Mês" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        @for (int i = 1; i <= 12; i++)
+                        {
+                            <MudSelectItem Value="@i">@CultureInfo.GetCultureInfo("pt-BR").DateTimeFormat.GetMonthName(i).ToUpperInvariant()</MudSelectItem>
+                        }
+                    </MudSelect>
                 </MudItem>
-                <MudItem xs="12" sm="6" Class="d-flex align-center">
-                    <MudSwitch T="bool" @bind-Value="Transaction.IsPaid" Color="Color.Success">Pago / Concluído</MudSwitch>
+                <MudItem xs="12" sm="4">
+                    <MudSelect @bind-Value="Transaction.Year" Label="Ano" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        @for (int i = 2024; i <= 2030; i++)
+                        {
+                            <MudSelectItem Value="@i">@i</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudSelect @bind-Value="Transaction.InstallmentNumber" Label="Nº de Parcelas" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        @for (int i = 1; i <= 24; i++)
+                        {
+                            <MudSelectItem Value="@i">@i</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                
+                <MudItem xs="12" Class="d-flex align-center">
+                    <MudCheckBox @bind-Value="Transaction.IsPaid" Label="Pago?" Color="Color.Default" />
                 </MudItem>
             </MudGrid>
         </MudForm>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" Class="px-4">Cancelar</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Class="px-6">Salvar</MudButton>
+        <MudButton OnClick="Cancel" Class="px-4" Style="background-color: #6c757d; color: white; text-transform: none;">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" OnClick="Submit" Class="px-6" Style="background-color: #dc3545; color: white; text-transform: none;">Criar</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    
     [Parameter] public Transaction Transaction { get; set; } = new();
 
     private MudForm _form = null!;
+    
+    protected override void OnInitialized()
+    {
+        if (Transaction.Month == 0) Transaction.Month = DateTime.Now.Month;
+        if (Transaction.Year == 0) Transaction.Year = DateTime.Now.Year;
+        if (Transaction.InstallmentNumber == 0) Transaction.InstallmentNumber = 1;
+    }
 
     private void Cancel() => MudDialog.Cancel();
 

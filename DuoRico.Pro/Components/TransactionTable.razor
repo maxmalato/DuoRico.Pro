@@ -6,8 +6,6 @@
 @inject ISnackbar Snackbar
 
 <MudPaper Class="pa-3 pa-sm-4 mt-4" Elevation="3">
-    
-    @* Cabeçalho Responsivo *@
     <MudToolBar DisablePadding="true" Class="mb-4">
         <MudText Typo="Typo.h5" Color="Color.Primary" Class="d-flex align-center">
             <MudIcon Icon="@Icons.Material.Filled.Receipt" Class="mr-2" /> 
@@ -16,16 +14,17 @@
         </MudText>
         <MudSpacer />
         
-        @* Botão visível APENAS em Desktop/Tablet *@
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenNewTransactionDialog" Class="d-none d-sm-flex">
-            Nova Transação
+        <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.ArrowUpward" OnClick="@(() => OpenNewTransactionDialog(TransactionType.Income))" Class="d-none d-sm-flex mr-2 text-white">
+            Receita
+        </MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.ArrowDownward" OnClick="@(() => OpenNewTransactionDialog(TransactionType.Expense))" Class="d-none d-sm-flex text-white">
+            Despesa
         </MudButton>
         
-        @* Botão pequeno (apenas ícone) visível APENAS no Celular *@
-        <MudIconButton Variant="Variant.Filled" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" OnClick="OpenNewTransactionDialog" Class="d-flex d-sm-none" Size="Size.Small" />
+        <MudIconButton Variant="Variant.Filled" Color="Color.Success" Icon="@Icons.Material.Filled.ArrowUpward" OnClick="@(() => OpenNewTransactionDialog(TransactionType.Income))" Class="d-flex d-sm-none mr-2 text-white" Size="Size.Small" />
+        <MudIconButton Variant="Variant.Filled" Color="Color.Error" Icon="@Icons.Material.Filled.ArrowDownward" OnClick="@(() => OpenNewTransactionDialog(TransactionType.Expense))" Class="d-flex d-sm-none text-white" Size="Size.Small" />
     </MudToolBar>
-
-    @* Tabela com rolagem horizontal ativada para não quebrar o layout *@
+    
     <MudTable Items="@_transactions" 
               Loading="@(_isLoading)" 
               Dense="true" 
@@ -37,7 +36,6 @@
         
         <HeaderContent>
             <MudTh>Descrição</MudTh>
-            @* A coluna de Categoria some em telas muito pequenas (celular) *@
             <MudTh Class="d-none d-sm-table-cell">Categoria</MudTh>
             <MudTh>Estado</MudTh>
             <MudTh Style="text-align: right">Valor</MudTh>
@@ -69,7 +67,7 @@
 
     private List<TransactionDto> _transactions = new();
     private bool _isLoading = true;
-
+    
     protected override async Task OnParametersSetAsync()
     {
         _isLoading = true;
@@ -82,29 +80,34 @@
             _isLoading = false;
         }
     }
-
-    private async Task OpenNewTransactionDialog()
+    
+    private async Task OpenNewTransactionDialog(TransactionType type)
     {
-        // DialogOptions ajustado para preencher a tela em celulares se necessário
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
         
-        var dialog = await DialogService.ShowAsync<TransactionDialog>("Nova Transação", options);
+        var initialTransaction = new Transaction 
+        { 
+            Type = type 
+        };
+
+        var parameters = new DialogParameters { ["Transaction"] = initialTransaction };
+
+        var dialog = await DialogService.ShowAsync<TransactionDialog>(type == TransactionType.Income ? "Nova Receita" : "Nova Despesa", parameters, options);
         var result = await dialog.Result;
 
         if (!result.Canceled)
         {
             var newTransaction = (Transaction)result.Data;
-            
             var success = await TransactionService.CreateTransactionAsync(newTransaction);
             
             if (success)
             {
                 Snackbar.Add("Transação registrada com sucesso!", Severity.Success);
-                await OnParametersSetAsync(); 
+                await OnParametersSetAsync(); // Recarrega a tabela chamando o método ali de cima
             }
             else
             {
-                Snackbar.Add("Erro ao registrar. Você está logado e faz parte de um Casal?", Severity.Error);
+                Snackbar.Add("Erro ao registrar. Verifique sua conexão.", Severity.Error);
             }
         }
     }

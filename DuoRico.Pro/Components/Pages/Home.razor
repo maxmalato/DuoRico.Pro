@@ -1,4 +1,8 @@
 ﻿@page "/"
+@using Microsoft.AspNetCore.Components.Authorization
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
 
 <PageTitle>Duo Rico - Dashboard</PageTitle>
 
@@ -7,5 +11,18 @@
     <MudText Typo="Typo.body1" Class="mb-8">Bem-vindo ao novo Duo Rico Pro.</MudText>
 
     <TransactionTable />
-    
 </MudContainer>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (!user.Identity?.IsAuthenticated ?? true)
+        {
+            NavigationManager.NavigateTo("/Account/Login", forceLoad: true);
+        }
+    }
+
+}
