@@ -1,5 +1,6 @@
 @using System.Globalization
 @using DuoRico.Pro.Models
+@using DuoRico.Pro.DTOs
 
 @inject ITransactionService TransactionService
 @inject IDialogService DialogService
@@ -85,25 +86,25 @@
     {
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
         
-        var initialTransaction = new Transaction 
+        var initalModel = new CreateTransactionDto
         { 
             Type = type 
         };
 
-        var parameters = new DialogParameters { ["Transaction"] = initialTransaction };
+        var parameters = new DialogParameters { ["Model"] = initalModel };
 
         var dialog = await DialogService.ShowAsync<TransactionDialog>(type == TransactionType.Income ? "Nova Receita" : "Nova Despesa", parameters, options);
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (!result!.Canceled && result.Data != null)
         {
-            var newTransaction = (Transaction)result.Data;
+            var newTransaction = (CreateTransactionDto)result.Data;
             var success = await TransactionService.CreateTransactionAsync(newTransaction);
             
             if (success)
             {
                 Snackbar.Add("Transação registrada com sucesso!", Severity.Success);
-                await OnParametersSetAsync(); // Recarrega a tabela chamando o método ali de cima
+                await OnParametersSetAsync();
             }
             else
             {

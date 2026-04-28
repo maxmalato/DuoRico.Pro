@@ -1,4 +1,5 @@
 @using DuoRico.Pro.Models
+@using DuoRico.Pro.DTOs
 @using System.Globalization
 
 <MudDialog>
@@ -6,14 +7,15 @@
         <MudForm @ref="_form">
             <MudGrid>
                 <MudItem xs="12">
-                    <MudTextField @bind-Value="Transaction.Description" Label="Descrição" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudTextField @bind-Value="Model.Description" Label="Descrição" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
                 
                 <MudItem xs="12" sm="6">
-                    <MudNumericField @bind-Value="Transaction.Amount" Label="Valor" Format="N2" Culture="@(new CultureInfo("pt-BR"))" Required="true" Min="0.01m" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudNumericField @bind-Value="Model.Amount" Label="Valor" Format="N2" Culture="@(new CultureInfo("pt-BR"))" Required="true" Min="0.01m" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
+
                 <MudItem xs="12" sm="6">
-                    <MudSelect @bind-Value="Transaction.Category" Label="Categoria" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+                    <MudSelect @bind-Value="Model.Category" Label="Categoria" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense">
                         <MudSelectItem Value="@("Cartão de Crédito")">Cartão de Crédito</MudSelectItem>
                         <MudSelectItem Value="@("Alimentação")">Alimentação</MudSelectItem>
                         <MudSelectItem Value="@("Moradia")">Moradia</MudSelectItem>
@@ -23,32 +25,39 @@
                 </MudItem>
                 
                 <MudItem xs="12" sm="4">
-                    <MudSelect @bind-Value="Transaction.Month" Label="Mês" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+                    <MudSelect @bind-Value="Model.Month" Label="Mês" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense">
                         @for (int i = 1; i <= 12; i++)
                         {
-                            <MudSelectItem Value="@i">@CultureInfo.GetCultureInfo("pt-BR").DateTimeFormat.GetMonthName(i).ToUpperInvariant()</MudSelectItem>
+                            var month = i;
+                            var nameMonth = CultureInfo.GetCultureInfo("pt-BR").DateTimeFormat.GetMonthName(month);
+                            var monthFirstLetterUpper = char.ToUpper(nameMonth[0]) + nameMonth.Substring(1);
+                           
+                            <MudSelectItem Value="@month">@monthFirstLetterUpper</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="12" sm="4">
+                    <MudSelect @bind-Value="Model.Year" Label="Ano" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        @for (int i = 2025; i <= DateTime.Now.Year + 3; i++)
+                        {
+                            var year = i;
+                            <MudSelectItem Value="@year">@year</MudSelectItem>
                         }
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="12" sm="4">
-                    <MudSelect @bind-Value="Transaction.Year" Label="Ano" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense">
-                        @for (int i = 2024; i <= 2030; i++)
+                    <MudSelect @bind-Value="Model.InstallmentNumber" Label="Nº de Parcelas" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        @for (int i = 1; i <= 48; i++)
                         {
-                            <MudSelectItem Value="@i">@i</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="12" sm="4">
-                    <MudSelect @bind-Value="Transaction.InstallmentNumber" Label="Nº de Parcelas" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense">
-                        @for (int i = 1; i <= 24; i++)
-                        {
-                            <MudSelectItem Value="@i">@i</MudSelectItem>
+                            var installments = i;
+                            <MudSelectItem Value="@installments">@installments</MudSelectItem>
                         }
                     </MudSelect>
                 </MudItem>
                 
                 <MudItem xs="12" Class="d-flex align-center">
-                    <MudCheckBox @bind-Value="Transaction.IsPaid" Label="Pago?" Color="Color.Default" />
+                    <MudCheckBox @bind-Value="Model.IsPaid" Label="Pago?" Color="Color.Default" />
                 </MudItem>
             </MudGrid>
         </MudForm>
@@ -62,25 +71,25 @@
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
     
-    [Parameter] public Transaction Transaction { get; set; } = new();
+    [Parameter] public CreateTransactionDto Model { get; set; } = new();
 
     private MudForm _form = null!;
     
     protected override void OnInitialized()
     {
-        if (Transaction.Month == 0) Transaction.Month = DateTime.Now.Month;
-        if (Transaction.Year == 0) Transaction.Year = DateTime.Now.Year;
-        if (Transaction.InstallmentNumber == 0) Transaction.InstallmentNumber = 1;
+        if (Model.Month == 0) Model.Month = DateTime.Now.Month;
+        if (Model.Year == 0) Model.Year = DateTime.Now.Year;
+        if (Model.InstallmentNumber == 0) Model.InstallmentNumber = 1;
     }
 
     private void Cancel() => MudDialog.Cancel();
 
     private async Task Submit()
     {
-        await _form.Validate();
+        await _form.ValidateAsync();
         if (_form.IsValid)
         {
-            MudDialog.Close(DialogResult.Ok(Transaction));
+            MudDialog.Close(DialogResult.Ok(Model));
         }
     }
 }

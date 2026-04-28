@@ -13,46 +13,92 @@ public enum TransactionType
 public class Transaction
 {
     [Key]
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid Id { get; private set; }
 
-    [Required(ErrorMessage = "A descrição é obrigatória.")]
-    [Display(Name = "Descrição")]
-    public string Description { get; set; } = string.Empty;
+    [Required]
+    public string Description { get; private set; } = string.Empty;
 
-    [Required(ErrorMessage = "O valor é obrigatório.")]
-    [Display(Name = "Valor")]
+    [Required]
     [Column(TypeName = "numeric(12, 2)")]
-    public decimal Amount { get; set; }
+    public decimal Amount { get; private set; }
 
-    [Required(ErrorMessage = "A categoria é obrigatória.")]
-    [Display(Name = "Categoria")]
-    public string Category { get; set; } = string.Empty;
+    [Required]
+    public string Category { get; private set; } = string.Empty;
 
-    public TransactionType Type { get; set; }
-    
-    [Display(Name = "Pago?")]
-    public bool IsPaid { get; set; } = false;
+    public TransactionType Type { get; private set; }
 
-    public int TotalInstallments { get; set; }
+    public bool IsPaid { get; private set; }
 
-    public int InstallmentNumber { get; set; }
+    public int TotalInstallments { get; private set; }
+    public int InstallmentNumber { get; private set; }
+    public Guid? InstallmentGroupId { get; private set; }
 
-    public Guid? InstallmentGroupId { get; set; }
+    [Required]
+    public int Month { get; private set; }
 
-    [Required(ErrorMessage = "O mês é obrigatório.")]
-    [Display(Name = "Mês")]
-    [Range(1, 12)]
-    public int Month { get; set; }
+    [Required]
+    public int Year { get; private set; }
 
-    [Required(ErrorMessage = "O ano é obrigatório.")]
-    [Display(Name = "Ano")]
-    [Range(2025, 2100)]
-    public int Year { get; set; }
+    public DateTime CreatedAt { get; private set; }
+    public string? UserId { get; private set; }
+    public virtual ApplicationUser? User { get; private set; }
 
-    [Display(Name = "Data de criação")]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    protected Transaction() { }
 
-    public string? UserId { get; set; }
+    public Transaction(
+        string description, 
+        decimal amount, 
+        string category,
+        TransactionType type, 
+        int month, 
+        int year,
+        int installmentNumber, 
+        int totalInstallments,
+        bool isPaid, 
+        string userId)
+    {
+        // Validações de domínio
+        if(string.IsNullOrWhiteSpace(description))
+            throw new ArgumentException("Descrição não pode ser vazia.", nameof(description));
+        if (amount <= 0)
+            throw new ArgumentException("O valor deve ser maior que zero.");
+        if (month is < 1 or > 12)
+            throw new ArgumentException("Mês inválido.");
 
-    public virtual ApplicationUser? User { get; set; }
+        Id = Guid.NewGuid();
+        Description = description;
+        Amount = amount;
+        Category = category;
+        Type = type;
+        Month = month;
+        Year = year;
+        InstallmentNumber = installmentNumber;
+        TotalInstallments = totalInstallments > 1 ? totalInstallments : 1;
+        IsPaid = isPaid;
+        UserId = userId;
+        CreatedAt = DateTime.UtcNow;
+
+        if(TotalInstallments > 1)
+        {
+            InstallmentGroupId = Guid.NewGuid();
+        }
+    }
+
+    public void Update(string description, decimal amount, string category, bool isPaid)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            throw new ArgumentException("Descrição não pode ser vazia.", nameof(description));
+        if (amount <= 0)
+            throw new ArgumentException("O valor deve ser maior que zero.");
+        
+        Description = description;
+        Amount = amount;
+        Category = category;
+        IsPaid = isPaid;
+    }
+
+    public void TogglePaidStatus()
+    {
+        IsPaid = !IsPaid;
+    }
 }

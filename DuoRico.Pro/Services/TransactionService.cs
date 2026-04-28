@@ -1,7 +1,8 @@
 using DuoRico.Pro.Data;
-using DuoRico.Pro.Models;
 using DuoRico.Pro.DTOs;
 using DuoRico.Pro.Interfaces;
+using DuoRico.Pro.Models;
+using Humanizer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,6 +14,15 @@ public class TransactionService(
     UserManager<ApplicationUser> userManager)
     : ITransactionService
 {
+    private async Task<ApplicationUser?> GetCurrentUserAsync()
+    {
+        var principal = httpContextAccessor.HttpContext?.User;
+
+        if (principal == null) return null;
+
+        return await userManager.GetUserAsync(principal);
+    }
+
     public async Task<List<Transaction>> GetCoupleTransactionsAsync()
     {
         var currentUser = await GetCurrentUserAsync();
@@ -24,68 +34,6 @@ public class TransactionService(
             .ToListAsync();
     }
 
-    public async Task<bool> CreateTransactionAsync(Transaction transaction)
-    {
-        var currentUser = await GetCurrentUserAsync();
-        if (currentUser?.CoupleId == null)
-            return false;
-
-        transaction.Id = Guid.NewGuid();
-        transaction.UserId = currentUser.Id;
-        transaction.CreatedAt = DateTime.UtcNow;
-
-        context.Transactions.Add(transaction);
-        await context.SaveChangesAsync();
-        return true;
-    }
-
-    public async Task<bool> UpdateTransactionAsync(Transaction transaction)
-    {
-        var currentUser = await GetCurrentUserAsync();
-        if (currentUser == null) return false;
-
-        var existing = await context.Transactions
-            .FirstOrDefaultAsync(t => t.Id == transaction.Id && t.User!.CoupleId == currentUser.CoupleId);
-
-        if (existing == null) return false;
-
-        // Atualize apenas os campos permitidos
-        existing.Description = transaction.Description;
-        existing.Amount = transaction.Amount;
-        existing.Category = transaction.Category;
-        existing.Type = transaction.Type;
-        existing.IsPaid = transaction.IsPaid;
-        // Outras atualizações...
-
-        await context.SaveChangesAsync();
-        return true;
-    }
-
-    public async Task<bool> DeleteTransactionAsync(Guid transactionId)
-    {
-        var currentUser = await GetCurrentUserAsync();
-        if (currentUser == null) return false;
-
-        var transaction = await context.Transactions
-            .FirstOrDefaultAsync(t => t.Id == transactionId && t.User!.CoupleId == currentUser.CoupleId);
-
-        if (transaction == null) return false;
-
-        context.Transactions.Remove(transaction);
-        await context.SaveChangesAsync();
-        return true;
-    }
-
-    private async Task<ApplicationUser?> GetCurrentUserAsync()
-    {
-        var principal = httpContextAccessor.HttpContext?.User;
-
-        if (principal == null) return null;
-
-        return await userManager.GetUserAsync(principal);
-    }
-
-    // Buscar transações do casal autenticado por filtro (mês e ano)
     public async Task<List<TransactionDto>> GetCoupleTransactionsForPeriodAsync(int month, int year)
     {
         var currentUser = await GetCurrentUserAsync();
@@ -136,5 +84,67 @@ public class TransactionService(
             TotalIncome = totalIncome,
             TotalExpense = totalExpense
         };
+    }
+
+    public async Task<bool> CreateTransactionAsync(CreateTransactionDto dto)
+    {
+        var currentUser = await GetCurrentUserAsync();
+
+        if (currentUser?.CoupleId == null)
+            return false;
+
+        var transaction = new Transaction(
+            description: dto.Description,
+            amount: dto.Amount,
+            category: dto.Category,
+            type: dto.Type,
+            month: dto.Month,
+            year: dto.Year,
+            installmentNumber: 1,
+            totalInstallments: dto.InstallmentNumber,
+            isPaid: dto.IsPaid,
+            userId: currentUser.Id
+        );
+
+        context.Transactions.Add(transaction);
+        await context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> UpdateTransactionAsync(Transaction transaction)
+    {
+        var currentUser = await GetCurrentUserAsync();
+        if (currentUser == null) return false;
+
+        var existing = await context.Transactions
+            .FirstOrDefaultAsync(t => t.Id == transaction.Id && t.User!.CoupleId == currentUser.CoupleId);
+
+        if (existing == null) return false;
+
+        // Atualizar os campos permitidos de acordo com o método Update da entidade Transaction
+        existing.Update(
+            description: transaction.Description,
+            amount: transaction.Amount,
+            category: transaction.Category,
+            isPaid: transaction.IsPaid
+        );
+
+        await context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> DeleteTransactionAsync(Guid transactionId)
+    {
+        var currentUser = await GetCurrentUserAsync();
+        if (currentUser == null) return false;
+
+        var transaction = await context.Transactions
+            .FirstOrDefaultAsync(t => t.Id == transactionId && t.User!.CoupleId == currentUser.CoupleId);
+
+        if (transaction == null) return false;
+
+        context.Transactions.Remove(transaction);
+        await context.SaveChangesAsync();
+        return true;
     }
 }
