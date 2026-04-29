@@ -2,7 +2,6 @@ using DuoRico.Pro.Data;
 using DuoRico.Pro.DTOs;
 using DuoRico.Pro.Interfaces;
 using DuoRico.Pro.Models;
-using Humanizer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -86,7 +85,7 @@ public class TransactionService(
         };
     }
 
-    public async Task<bool> CreateTransactionAsync(CreateTransactionDto dto)
+    public async Task<bool> CreateTransactionAsync(CreateTransactionDto createTransactionDto)
     {
         var currentUser = await GetCurrentUserAsync();
 
@@ -94,15 +93,15 @@ public class TransactionService(
             return false;
 
         var transaction = new Transaction(
-            description: dto.Description,
-            amount: dto.Amount,
-            category: dto.Category,
-            type: dto.Type,
-            month: dto.Month,
-            year: dto.Year,
+            description: createTransactionDto.Description,
+            amount: createTransactionDto.Amount,
+            category: createTransactionDto.Category,
+            type: createTransactionDto.Type,
+            month: createTransactionDto.Month,
+            year: createTransactionDto.Year,
             installmentNumber: 1,
-            totalInstallments: dto.InstallmentNumber,
-            isPaid: dto.IsPaid,
+            totalInstallments: createTransactionDto.InstallmentNumber,
+            isPaid: createTransactionDto.IsPaid,
             userId: currentUser.Id
         );
 
@@ -111,22 +110,22 @@ public class TransactionService(
         return true;
     }
 
-    public async Task<bool> UpdateTransactionAsync(Transaction transaction)
+    public async Task<bool> UpdateTransactionAsync(UpdateTransactionDto updateTransactionDto)
     {
         var currentUser = await GetCurrentUserAsync();
         if (currentUser == null) return false;
 
         var existing = await context.Transactions
-            .FirstOrDefaultAsync(t => t.Id == transaction.Id && t.User!.CoupleId == currentUser.CoupleId);
+            .FirstOrDefaultAsync(t => t.Id == updateTransactionDto.Id && t.User!.CoupleId == currentUser.CoupleId);
 
         if (existing == null) return false;
 
         // Atualizar os campos permitidos de acordo com o método Update da entidade Transaction
         existing.Update(
-            description: transaction.Description,
-            amount: transaction.Amount,
-            category: transaction.Category,
-            isPaid: transaction.IsPaid
+            description: updateTransactionDto.Description,
+            amount: updateTransactionDto.Amount,
+            category: updateTransactionDto.Category,
+            isPaid: updateTransactionDto.IsPaid
         );
 
         await context.SaveChangesAsync();

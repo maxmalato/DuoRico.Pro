@@ -7,6 +7,7 @@ public interface ITransactionService
 {
     Task<List<TransactionDto>> GetCoupleTransactionsForPeriodAsync(int month, int year);
     Task<TransactionSummaryDto> GetSummaryForPeriodAsync(Guid coupleId, int month, int year);
-    Task<bool> CreateTransactionAsync(CreateTransactionDto transaction);
+    Task<bool> CreateTransactionAsync(CreateTransactionDto createTransactionDto);
+    Task<bool> UpdateTransactionAsync(UpdateTransactionDto updateTransactionDto);
     Task<bool> DeleteTransactionAsync(Guid transactionId);
 }
