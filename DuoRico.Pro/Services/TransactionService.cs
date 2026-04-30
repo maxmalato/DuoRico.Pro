@@ -1,97 +1,43 @@
-using DuoRico.Pro.Data;
 using DuoRico.Pro.DTOs;
 using DuoRico.Pro.Interfaces;
 using DuoRico.Pro.Models;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace DuoRico.Pro.Services;
 
-public class TransactionService(
-    ApplicationDbContext context,
-    IHttpContextAccessor httpContextAccessor,
-    UserManager<ApplicationUser> userManager)
-    : ITransactionService
+public class TransactionService(ITransactionRepository repository) : ITransactionService
 {
-    private async Task<ApplicationUser?> GetCurrentUserAsync()
+    public async Task<List<TransactionDto>> GetCoupleTransactionsForPeriodAsync(Guid coupleId, int month, int year)
     {
-        var principal = httpContextAccessor.HttpContext?.User;
+        var transaction = await repository.GetByPeriodAsync(coupleId, month, year);
 
-        if (principal == null) return null;
-
-        return await userManager.GetUserAsync(principal);
-    }
-
-    public async Task<List<Transaction>> GetCoupleTransactionsAsync()
-    {
-        var currentUser = await GetCurrentUserAsync();
-
-        if (currentUser?.CoupleId == null) return new List<Transaction>();
-
-        return await context.Transactions
-            .Where(t => t.User!.CoupleId == currentUser.CoupleId)
-            .ToListAsync();
-    }
-
-    public async Task<List<TransactionDto>> GetCoupleTransactionsForPeriodAsync(int month, int year)
-    {
-        var currentUser = await GetCurrentUserAsync();
-
-        if (currentUser?.CoupleId == null)
-            return new List<TransactionDto>();
-
-        return await context.Transactions
-            .Where(t => t.User!.CoupleId == currentUser.CoupleId &&
-                        t.Month == month &&
-                        t.Year == year)
-            .Select(t => new TransactionDto
-            {
-                Id = t.Id,
-                Description = t.Description,
-                Amount = t.Amount,
-                Category = t.Category,
-                Type = t.Type,
-                IsPaid = t.IsPaid,
-                CreatedAt = t.CreatedAt,
-                InstallmentNumber = t.InstallmentNumber,
-                TotalInstallments = t.TotalInstallments,
-                InstallmentGroupId = t.InstallmentGroupId
-            })
-            .ToListAsync();
+        return transaction.Select(t => new TransactionDto
+        {
+            Id = t.Id,
+            Description = t.Description,
+            Amount = t.Amount,
+            Category = t.Category,
+            Type = t.Type,
+            IsPaid = t.IsPaid,
+            CreatedAt = t.CreatedAt,
+            InstallmentNumber = t.InstallmentNumber,
+            TotalInstallments = t.TotalInstallments,
+            InstallmentGroupId = t.InstallmentGroupId,
+        }).ToList();
     }
 
     public async Task<TransactionSummaryDto> GetSummaryForPeriodAsync(Guid coupleId, int month, int year)
     {
-        // Calcula a soma das receitas diretamente no banco de dados
-        var totalIncome = await context.Transactions
-            .Where(t => t.User!.CoupleId == coupleId &&
-                        t.Type == TransactionType.Income &&
-                        t.Month == month &&
-                        t.Year == year)
-            .SumAsync(t => t.Amount);
-
-        // Calcula a soma das despesas diretamente no banco de dados
-        var totalExpense = await context.Transactions
-            .Where(t => t.User!.CoupleId == coupleId &&
-                        t.Type == TransactionType.Expense &&
-                        t.Month == month &&
-                        t.Year == year)
-            .SumAsync(t => t.Amount);
+        var (income, expense) = await repository.GetSummaryAsync(coupleId, month, year);
 
         return new TransactionSummaryDto
         {
-            TotalIncome = totalIncome,
-            TotalExpense = totalExpense
+            TotalIncome = income,
+            TotalExpense = expense,
         };
     }
 
-    public async Task<bool> CreateTransactionAsync(CreateTransactionDto createTransactionDto)
+    public async Task<bool> CreateTransactionAsync(CreateTransactionDto createTransactionDto, string userId, Guid coupleId)
     {
-        var currentUser = await GetCurrentUserAsync();
-
-        if (currentUser?.CoupleId == null)
-            return false;
-
         var transaction = new Transaction(
             description: createTransactionDto.Description,
             amount: createTransactionDto.Amount,
@@ -102,25 +48,20 @@ public class TransactionService(
             installmentNumber: 1,
             totalInstallments: createTransactionDto.InstallmentNumber,
             isPaid: createTransactionDto.IsPaid,
-            userId: currentUser.Id
+            userId: userId
         );
 
-        context.Transactions.Add(transaction);
-        await context.SaveChangesAsync();
+        await repository.AddAsync(transaction);
+
         return true;
     }
 
-    public async Task<bool> UpdateTransactionAsync(UpdateTransactionDto updateTransactionDto)
+    public async Task<bool> UpdateTransactionAsync(UpdateTransactionDto updateTransactionDto, Guid coupleId)
     {
-        var currentUser = await GetCurrentUserAsync();
-        if (currentUser == null) return false;
-
-        var existing = await context.Transactions
-            .FirstOrDefaultAsync(t => t.Id == updateTransactionDto.Id && t.User!.CoupleId == currentUser.CoupleId);
+        var existing = await repository.GetByIdAsync(updateTransactionDto.Id, coupleId);
 
         if (existing == null) return false;
 
-        // Atualizar os campos permitidos de acordo com o método Update da entidade Transaction
         existing.Update(
             description: updateTransactionDto.Description,
             amount: updateTransactionDto.Amount,
@@ -128,22 +69,19 @@ public class TransactionService(
             isPaid: updateTransactionDto.IsPaid
         );
 
-        await context.SaveChangesAsync();
+        await repository.UpdateAsync(existing);
+
         return true;
     }
 
-    public async Task<bool> DeleteTransactionAsync(Guid transactionId)
+    public async Task<bool> DeleteTransactionAsync(Guid transactionId, Guid coupleId)
     {
-        var currentUser = await GetCurrentUserAsync();
-        if (currentUser == null) return false;
+        var existing = await repository.GetByIdAsync(transactionId, coupleId);
 
-        var transaction = await context.Transactions
-            .FirstOrDefaultAsync(t => t.Id == transactionId && t.User!.CoupleId == currentUser.CoupleId);
+        if (existing == null) return false;
 
-        if (transaction == null) return false;
+        await repository.DeleteAsync(existing);
 
-        context.Transactions.Remove(transaction);
-        await context.SaveChangesAsync();
         return true;
     }
 }

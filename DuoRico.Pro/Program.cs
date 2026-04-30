@@ -3,6 +3,7 @@ using DuoRico.Pro.Components.Account;
 using DuoRico.Pro.Data;
 using DuoRico.Pro.Interfaces;
 using DuoRico.Pro.Services;
+using DuoRico.Pro.Repositories;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -45,6 +46,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
 builder.Services.AddMudServices();
+builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 
 var app = builder.Build();

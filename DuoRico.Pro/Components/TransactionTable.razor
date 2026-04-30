@@ -1,7 +1,12 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Identity
 @using System.Globalization
 @using DuoRico.Pro.Models
 @using DuoRico.Pro.DTOs
+@using DuoRico.Pro.Data
 
+@inject AuthenticationStateProvider AuthStateProvider
+@inject UserManager<ApplicationUser> UserManager
 @inject ITransactionService TransactionService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -68,15 +73,37 @@
 
     private List<TransactionDto> _transactions = new();
     private bool _isLoading = true;
-    
+    private string _currentUserId = string.Empty;
+    private Guid _currentCoupleId = Guid.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var appUser = await UserManager.GetUserAsync(user);
+
+            if(appUser.Id != null && appUser.CoupleId.HasValue)
+            {
+                _currentUserId = appUser.Id;
+                _currentCoupleId = appUser.CoupleId.Value;
+            }
+        }
+    }
+
     protected override async Task OnParametersSetAsync()
     {
+        if (_currentCoupleId == Guid.Empty) return;
+
         _isLoading = true;
-        try 
+
+        try
         {
-            _transactions = await TransactionService.GetCoupleTransactionsForPeriodAsync(Month, Year);
+            _transactions = await TransactionService.GetCoupleTransactionsForPeriodAsync(_currentCoupleId, Month, Year);
         }
-        finally 
+        finally
         {
             _isLoading = false;
         }
@@ -99,17 +126,8 @@
         if (!result!.Canceled && result.Data != null)
         {
             var newTransaction = (CreateTransactionDto)result.Data;
-            var success = await TransactionService.CreateTransactionAsync(newTransaction);
-            
-            if (success)
-            {
-                Snackbar.Add("Transação registrada com sucesso!", Severity.Success);
-                await OnParametersSetAsync();
-            }
-            else
-            {
-                Snackbar.Add("Erro ao registrar. Verifique sua conexão.", Severity.Error);
-            }
+
+            var success = await TransactionService.CreateTransactionAsync(newTransaction, _currentUserId, _currentCoupleId);
         }
     }
 }
