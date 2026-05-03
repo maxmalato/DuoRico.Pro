@@ -1,8 +1,6 @@
-@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Identity
 @using System.Globalization
 @using DuoRico.Pro.Models
-@using DuoRico.Pro.DTOs
 @using DuoRico.Pro.Data
 
 @inject AuthenticationStateProvider AuthStateProvider
@@ -95,8 +93,13 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        if (_currentCoupleId == Guid.Empty) return;
+        await LoadDataAsync();
+    }
 
+    private async Task LoadDataAsync()
+    {
+        if(_currentCoupleId == Guid.Empty) return;
+        
         _isLoading = true;
 
         try
@@ -128,6 +131,19 @@
             var newTransaction = (CreateTransactionDto)result.Data;
 
             var success = await TransactionService.CreateTransactionAsync(newTransaction, _currentUserId, _currentCoupleId);
+
+            if (success)
+            {
+                Snackbar.Add("Transação criada com sucesso!", Severity.Success);
+                
+                await LoadDataAsync();
+                
+                StateHasChanged();
+            }
+            else
+            {
+                Snackbar.Add("Erro ao criar a transação", Severity.Error);
+            }
         }
     }
 }

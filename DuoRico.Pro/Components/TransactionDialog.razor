@@ -1,26 +1,26 @@
 @using DuoRico.Pro.Models
 @using DuoRico.Pro.DTOs
+@using DuoRico.Pro.Constants
 @using System.Globalization
 
 <MudDialog>
     <DialogContent>
-        <MudForm @ref="_form">
+        <MudForm @ref="_form", Model="@Model">
             <MudGrid>
                 <MudItem xs="12">
-                    <MudTextField @bind-Value="Model.Description" Label="Descrição" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudTextField @bind-Value="Model.Description" Label="Descrição*" For="@(() => Model.Description)" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
                 
                 <MudItem xs="12" sm="6">
-                    <MudNumericField @bind-Value="Model.Amount" Label="Valor" Format="N2" Culture="@(new CultureInfo("pt-BR"))" Required="true" Min="0.01m" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudNumericField @bind-Value="Model.Amount" Label="Valor*" For="@(() => Model.Amount)" Format="N2" Culture="@(new CultureInfo("pt-BR"))" Min="0.01m" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
 
                 <MudItem xs="12" sm="6">
-                    <MudSelect @bind-Value="Model.Category" Label="Categoria" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense">
-                        <MudSelectItem Value="@("Cartão de Crédito")">Cartão de Crédito</MudSelectItem>
-                        <MudSelectItem Value="@("Alimentação")">Alimentação</MudSelectItem>
-                        <MudSelectItem Value="@("Moradia")">Moradia</MudSelectItem>
-                        <MudSelectItem Value="@("Transporte")">Transporte</MudSelectItem>
-                        <MudSelectItem Value="@("Lazer")">Lazer</MudSelectItem>
+                    <MudSelect @bind-Value="Model.Category" For="@(() => Model.Category)" Label="Categoria*" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        @foreach (var categoria in Categories)
+                        {
+                            <MudSelectItem Value="@categoria">@categoria</MudSelectItem>
+                        }
                     </MudSelect>
                 </MudItem>
                 
@@ -74,6 +74,7 @@
     [Parameter] public CreateTransactionDto Model { get; set; } = new();
 
     private MudForm _form = null!;
+    private IReadOnlyList<string> Categories => CategoryConstants.GetCategoriesByType(Model.Type);
     
     protected override void OnInitialized()
     {
