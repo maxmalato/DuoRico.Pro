@@ -1,0 +1,58 @@
+﻿@using DuoRico.Pro.Models
+@using DuoRico.Pro.DTOs
+@using DuoRico.Pro.Constants
+@using System.Globalization
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form" , Model="@Model">
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="Model.Description" Label="Descrição*" For="@(() => Model.Description)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                
+                <MudItem xs="12" sm="6">
+                    <MudNumericField @bind-Value="Model.Amount" Label="Valor*" For="@(() => Model.Amount)" Format="N2" Culture="@(new CultureInfo("pt-BR"))" Min="0.01m" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudSelect @bind-Value="Model.Category" For="@(() => Model.Category)" Label="Categoria*" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        @foreach (var categoria in Categories)
+                        {
+                            <MudSelectItem Value="@categoria">@categoria</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                
+                <MudItem xs="12" Class="d-flex align-center">
+                    <MudCheckBox @bind-Value="Model.IsPaid" Label="Pago?" Color="Color.Default" />
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">Salvar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    
+    [Parameter] public UpdateTransactionDto Model { get; set; } = new();
+
+    private MudForm _form = default!;
+    private IReadOnlyList<string> Categories => CategoryConstants.GetCategoriesByType(Model.Type);
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Submit()
+    {
+        await _form.ValidateAsync();
+        if (_form.IsValid)
+        {
+            MudDialog.Close(DialogResult.Ok(Model));
+        }
+    }
+}

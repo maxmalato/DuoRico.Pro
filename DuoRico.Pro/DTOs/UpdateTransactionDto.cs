@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using DuoRico.Pro.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace DuoRico.Pro.DTOs;
 
@@ -17,4 +18,6 @@ public class UpdateTransactionDto
     public string Category { get; set; } = string.Empty;
 
     public bool IsPaid { get; set; }
+
+    public TransactionType Type { get; set; }
 }

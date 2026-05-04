@@ -43,12 +43,14 @@
             <MudTh Class="d-none d-sm-table-cell">Categoria</MudTh>
             <MudTh>Estado</MudTh>
             <MudTh Style="text-align: right">Valor</MudTh>
+            <MudTh Style="text-align: center">Ações</MudTh>
         </HeaderContent>
         
         <RowTemplate>
             <MudTd DataLabel="Descrição">
                 <MudText Typo="Typo.body2" Style="font-weight: 600">@context.Description</MudText>
                 <MudText Typo="Typo.caption" Color="Color.Secondary">@context.CreatedAt.ToString("dd/MM/yyyy")</MudText>
+                <MudText Typo="Typo.caption">(@context.InstallmentNumber/@context.TotalInstallments)</MudText>
             </MudTd>
             <MudTd DataLabel="Categoria" Class="d-none d-sm-table-cell">@context.Category</MudTd>
             <MudTd DataLabel="Estado">
@@ -60,6 +62,12 @@
                 <MudText Color="@(context.Type == TransactionType.Income ? Color.Success : Color.Error)" Style="font-weight: 700">
                     @context.Amount.ToString("C", CultureInfo.GetCultureInfo("pt-BR"))
                 </MudText>
+            </MudTd>
+            <MudTd DataLabel="Ações" Style="text-align: center">
+                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                    <MudMenuItem OnClick="@(() => OpenEditTransactionDialog(context))">Editar</MudMenuItem>
+                    <MudMenuItem OnClick="@(() => DeleteTransaction(context))" Style="color: var(--mud-palette-error);">Excluir</MudMenuItem>
+                </MudMenu>
             </MudTd>
         </RowTemplate>
     </MudTable>
@@ -99,7 +107,7 @@
     private async Task LoadDataAsync()
     {
         if(_currentCoupleId == Guid.Empty) return;
-        
+
         _isLoading = true;
 
         try
@@ -111,11 +119,11 @@
             _isLoading = false;
         }
     }
-    
+
     private async Task OpenNewTransactionDialog(TransactionType type)
     {
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        
+
         var initalModel = new CreateTransactionDto
         { 
             Type = type 
@@ -135,14 +143,77 @@
             if (success)
             {
                 Snackbar.Add("Transação criada com sucesso!", Severity.Success);
-                
+
                 await LoadDataAsync();
-                
+
                 StateHasChanged();
             }
             else
             {
                 Snackbar.Add("Erro ao criar a transação", Severity.Error);
+            }
+        }
+    }
+
+    private async Task OpenEditTransactionDialog(TransactionDto transaction)
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+        var updateModel = new UpdateTransactionDto
+            {
+                Id = transaction.Id,
+                Description = transaction.Description,
+                Amount = transaction.Amount,
+                Category = transaction.Category,
+                IsPaid = transaction.IsPaid,
+                Type = transaction.Type
+            };
+
+        var parameters = new DialogParameters { ["Model"] = updateModel };
+        var dialog = await DialogService.ShowAsync<EditTransactionDialog>("Editar Transação", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result!.Canceled && result.Data != null)
+        {
+            var updatedTransaction = (UpdateTransactionDto)result.Data;
+
+            var success = await TransactionService.UpdateTransactionAsync(updatedTransaction, _currentCoupleId);
+
+            if (success)
+            {
+                Snackbar.Add("Transação atualizada com sucesso!", Severity.Success);
+
+                await LoadDataAsync();
+
+                StateHasChanged();
+            }
+            else
+            {
+                Snackbar.Add("Erro ao atualizar a transação", Severity.Error);
+            }
+        }
+    }
+
+    private async Task DeleteTransaction(TransactionDto transaction)
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync(
+            "Confirmar Exclusão",
+            $"Tem certeza que deseja excluir a transação {transaction.Description} no valor de {transaction.Amount}?",
+            yesText: "Sim, excluir", cancelText: "Cancelar");
+
+        if (result == true)
+        {
+            var success = await TransactionService.DeleteTransactionAsync(transaction.Id, _currentCoupleId);
+            
+            if (success)
+            {
+                Snackbar.Add("Transação excluída!", Severity.Success);
+                await LoadDataAsync();
+                StateHasChanged();
+            }
+            else
+            {
+                Snackbar.Add("Erro ao excluir. Tente novamente.", Severity.Error);
             }
         }
     }
