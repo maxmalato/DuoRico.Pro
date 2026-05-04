@@ -1,0 +1,26 @@
+﻿@inherits LayoutComponentBase
+
+<MudThemeProvider Theme="@DuoRicoTheme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<div class="d-flex align-center justify-center" style="background-color: #F4F6F8; min-height: 100vh;">
+    @Body
+</div>
+
+@code {
+    private MudTheme DuoRicoTheme = new MudTheme()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Primary = "#D4AF37",
+            AppbarBackground = "#1E1E24",
+            Background = "#F4F6F8"
+        },
+        LayoutProperties = new LayoutProperties()
+        {
+            DefaultBorderRadius = "12px"
+        }
+    };
+}
