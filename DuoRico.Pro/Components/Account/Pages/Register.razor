@@ -1,4 +1,5 @@
 ﻿@page "/Account/Register"
+@layout DuoRico.Pro.Components.Layout.AuthLayout
 
 @using System.ComponentModel.DataAnnotations
 @using System.Text
@@ -15,49 +16,65 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Register</PageTitle>
+<PageTitle>Registro - Duo Rico Pro</PageTitle>
 
-<h1>Register</h1>
+<MudContainer MaxWidth="MaxWidth.Small">
+    <MudCard Elevation="4" Class="pa-8 w-100 rounded-lg">
+        
+        <MudText Typo="Typo.h4" Align="Align.Center" Color="Color.Primary" Style="font-weight: 700; letter-spacing: 1px;" Class="mb-2">
+            DUO RICO <span style="font-weight: 300;">PRO</span>
+        </MudText>
+        <MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Default" Class="mb-6">
+            Crie sua conta e transforme a gestão financeira do seu casal.
+        </MudText>
 
-<div class="row">
-    <div class="col-lg-6">
         <StatusMessage Message="@Message" />
+
         <EditForm Model="Input" method="post" OnValidSubmit="RegisterUser" FormName="register">
             <DataAnnotationsValidator />
-            <h2>Create a new account.</h2>
-            <hr />
-            <ValidationSummary class="text-danger" role="alert" />
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.Name" id="Input.Name" class="form-control" autocomplete="name" aria-required="true" placeholder="João da Silva" />
-                <label for="Input.Name">Nome</label>
-                <ValidationMessage For="() => Input.Name" class="text-danger" />
+            
+            <div class="d-flex flex-column gap-4">
+                
+                <div class="form-floating">
+                    <InputText @bind-Value="Input.Name" id="Input.Name" class="form-control" autocomplete="name" aria-required="true" placeholder="Seu nome completo" />
+                    <label for="Input.Name">Nome completo</label>
+                    <ValidationMessage For="() => Input.Name" class="text-danger mt-1 d-block" style="font-size: 0.85rem;" />
+                </div>
+
+                <div class="form-floating">
+                    <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="seuemail@exemplo.com" />
+                    <label for="Input.Email">E-mail</label>
+                    <ValidationMessage For="() => Input.Email" class="text-danger mt-1 d-block" style="font-size: 0.85rem;" />
+                </div>
+
+                <div class="form-floating">
+                    <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="Senha" />
+                    <label for="Input.Password">Senha</label>
+                    <ValidationMessage For="() => Input.Password" class="text-danger mt-1 d-block" style="font-size: 0.85rem;" />
+                </div>
+
+                <div class="form-floating">
+                    <InputText type="password" @bind-Value="Input.ConfirmPassword" id="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="Confirme a senha" />
+                    <label for="Input.ConfirmPassword">Confirme a senha</label>
+                    <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger mt-1 d-block" style="font-size: 0.85rem;" />
+                </div>
+
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" Class="mt-2 py-2" Style="font-weight: bold;">
+                    Criar Conta
+                </MudButton>
+
+                <div class="d-flex justify-center mt-4 text-center">
+                    <MudText Typo="Typo.body2">
+                        Já tem uma conta?
+                        <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Login", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))" style="color: var(--mud-palette-primary); font-weight: 600; text-decoration: none;">
+                            Entre aqui
+                        </a>
+                    </MudText>
+                </div>
             </div>
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                <label for="Input.Email">Email</label>
-                <ValidationMessage For="() => Input.Email" class="text-danger" />
-            </div>
-            <div class="form-floating mb-3">
-                <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label for="Input.Password">Password</label>
-                <ValidationMessage For="() => Input.Password" class="text-danger" />
-            </div>
-            <div class="form-floating mb-3">
-                <InputText type="password" @bind-Value="Input.ConfirmPassword" id="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label for="Input.ConfirmPassword">Confirm Password</label>
-                <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger" />
-            </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
         </EditForm>
-    </div>
-    <div class="col-lg-4 col-lg-offset-2">
-        <section>
-            <h3>Use another service to register.</h3>
-            <hr />
-            <ExternalLoginPicker />
-        </section>
-    </div>
-</div>
+    </MudCard>
+</MudContainer>
 
 @code {
     private IEnumerable<IdentityError>? identityErrors;
@@ -68,7 +85,7 @@
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
 
-    private string? Message => identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
+    private string? Message => identityErrors is null ? null : $"Erro: {string.Join(", ", identityErrors.Select(error => error.Description))}";
 
     protected override void OnInitialized()
     {
@@ -93,7 +110,7 @@
             return;
         }
 
-        Logger.LogInformation("User created a new account with password.");
+        Logger.LogInformation("Usuário criou uma nova conta com senha.");
 
         var userId = await UserManager.GetUserIdAsync(user);
         var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
@@ -125,8 +142,8 @@
         }
         catch
         {
-            throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. " +
-                $"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor.");
+            throw new InvalidOperationException($"Não é possível criar uma instância de '{nameof(ApplicationUser)}'. " +
+                $"Certifique-se de que '{nameof(ApplicationUser)}' não é uma classe abstrata e possui um construtor sem parâmetros.");
         }
     }
 
@@ -134,7 +151,7 @@
     {
         if (!UserManager.SupportsUserEmail)
         {
-            throw new NotSupportedException("The default UI requires a user store with email support.");
+            throw new NotSupportedException("A interface padrão requer um armazenamento de usuário com suporte a e-mail.");
         }
         return (IUserEmailStore<ApplicationUser>)UserStore;
     }
@@ -145,20 +162,21 @@
         [Display(Name = "Nome")]
         public string Name { get; set; } = "";
         
-        [Required(ErrorMessage = "O e-mail é obrigatório")]
-        [EmailAddress]
+        [Required(ErrorMessage = "O e-mail é obrigatório.")]
+        [EmailAddress(ErrorMessage = "O formato do e-mail é inválido.")]
         [Display(Name = "Email")]
         public string Email { get; set; } = "";
 
-        [Required]
-        [StringLength(100, ErrorMessage = "O {0} deve ter pelo menos {2} e no máximo {1} caracteres de comprimento.", MinimumLength = 6)]
+        [Required(ErrorMessage = "A senha é obrigatória.")]
+        [StringLength(100, ErrorMessage = "A senha deve ter entre {2} e {1} caracteres.", MinimumLength = 6)]
         [DataType(DataType.Password)]
         [Display(Name = "Senha")]
         public string Password { get; set; } = "";
 
+        [Required(ErrorMessage = "A confirmação de senha é obrigatória.")]
         [DataType(DataType.Password)]
         [Display(Name = "Confirmar senha")]
-        [Compare("Password", ErrorMessage = "As senhas precisam ser iguais. ")]
+        [Compare("Password", ErrorMessage = "As senhas não conferem.")]
         public string ConfirmPassword { get; set; } = "";
     }
 }
