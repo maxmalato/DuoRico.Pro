@@ -9,6 +9,26 @@
     @Body
 </div>
 
+<script>
+    window.addEventListener('submit', function() {
+        
+        // Desativa o botão de submit e muda o texto
+        var btn = document.querySelector('button[type="submit"]');
+        if (btn) {
+            btn.style.pointerEvents = 'none';
+            btn.style.opacity = '0.8';
+            btn.innerText = 'Aguarde...';
+        }
+        
+        // Desativa os links de ação
+        var links = document.getElementById('actionLinks');
+        if (links) {
+            links.style.pointerEvents = 'none';
+            links.style.opacity = '0.5';
+        }
+    });
+</script>
+
 @code {
     private MudTheme DuoRicoTheme = new MudTheme()
     {
