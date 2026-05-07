@@ -1,0 +1,67 @@
+﻿@using System.Globalization
+@using DuoRico.Pro.Helpers
+
+<div class="d-flex gap-2 align-center">
+    <MudSelect T="int"
+               Value="@Month"
+               ValueChanged="OnMonthChanged"
+               Variant="Variant.Outlined"
+               Margin="Margin.Dense"
+               Dense="true"
+               Disabled="@IsLoading"
+               Style="min-width: 130px; background-color: white;">
+        @for (int i = 1; i <= 12; i++)
+        {
+            var month = i;
+            <MudSelectItem Value="@month">@DateHelpers.GetMonthName(month)</MudSelectItem>
+        }
+    </MudSelect>
+
+    <MudSelect T="int"
+               Value="@Year"
+               ValueChanged="OnYearChanged"
+               Variant="Variant.Outlined"
+               Margin="Margin.Dense"
+               Dense="true"
+               Disabled="@IsLoading"
+               Style="width: 100px; background-color: white;">
+        @for (int i = DateTime.Now.Year - 2; i <= DateTime.Now.Year + 2; i++)
+        {
+            var year = i;
+            <MudSelectItem Value="@year">@year</MudSelectItem>
+        }
+    </MudSelect>
+    
+    @if (IsLoading)
+    {
+        <MudProgressCircular Color="Color.Primary" Size="Size.Small" Indeterminate="true" Class="ml-2" />
+    }
+</div>
+
+@code {
+    // Recebe o Mês e avisa o Pai quando mudar
+    [Parameter] public int Month { get; set; }
+    [Parameter] public EventCallback<int> MonthChanged { get; set; }
+
+    // Recebe o Ano e avisa o Pai quando mudar
+    [Parameter] public int Year { get; set; }
+    [Parameter] public EventCallback<int> YearChanged { get; set; }
+
+    // Recebe o status de carregamento e a função para disparar a busca
+    [Parameter] public bool IsLoading { get; set; }
+    [Parameter] public EventCallback OnFilterChanged { get; set; }
+
+    private async Task OnMonthChanged(int newMonth)
+    {
+        Month = newMonth;
+        await MonthChanged.InvokeAsync(newMonth); 
+        await OnFilterChanged.InvokeAsync();
+    }
+
+    private async Task OnYearChanged(int newYear)
+    {
+        Year = newYear;
+        await YearChanged.InvokeAsync(newYear);
+        await OnFilterChanged.InvokeAsync();
+    }
+}

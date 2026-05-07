@@ -1,0 +1,183 @@
+﻿@page "/dashboard"
+
+@attribute [Authorize]
+@using DuoRico.Pro.Components.Shared
+@using Microsoft.AspNetCore.Authorization
+@using System.Globalization
+@using DuoRico.Pro.Models
+@using DuoRico.Pro.Data
+@using DuoRico.Pro.Helpers
+@using Microsoft.AspNetCore.Identity
+
+@inject ITransactionService TransactionService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject UserManager<ApplicationUser> UserManager
+
+<PageTitle>Duo Rico Pro - Dashboard</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6 mb-8">
+    @* CABEÇALHO E FILTROS *@
+    <MudGrid Class="align-center mb-4" Spacing="2">
+        <MudItem xs="12" sm="6">
+            <MudText Typo="Typo.h4" Style="font-weight: 700;" Color="Color.Dark">Dashboard</MudText>
+        </MudItem>
+        <MudItem xs="12" sm="6" Class="d-flex justify-sm-end align-center">
+            <PeriodSelector @bind-Month="_selectedMonth"
+                            @bind-Year="_selectedYear"
+                            OnFilterChanged="LoadDashboardDataAsync" />
+        </MudItem>
+    </MudGrid>
+
+    @* CARDS DE RESUMO *@
+    <MudGrid Class="mb-8" Spacing="3">
+        @* Card Receitas *@
+        <MudItem xs="12" sm="4">
+            <MudCard Elevation="2" Class="pa-4 rounded-lg" Style="border: 1px solid var(--mud-palette-success);">
+                <div class="d-flex justify-space-between align-start">
+                    <MudText Typo="Typo.body1" Color="Color.Dark">Receita de @MonthName</MudText>
+                    <MudIcon Icon="@Icons.Material.Filled.ArrowUpward" Color="Color.Success" Size="Size.Small" />
+                </div>
+                <MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Class="mt-2">
+                    @_totalIncome.ToString("C", CultureInfo.GetCultureInfo("pt-BR"))
+                </MudText>
+            </MudCard>
+        </MudItem>
+
+        @* Card Despesas *@
+        <MudItem xs="12" sm="4">
+            <MudCard Elevation="2" Class="pa-4 rounded-lg" Style="border: 1px solid var(--mud-palette-error);">
+                <div class="d-flex justify-space-between align-start">
+                    <MudText Typo="Typo.body1" Color="Color.Dark">Despesa de @MonthName</MudText>
+                    <MudIcon Icon="@Icons.Material.Filled.ArrowDownward" Color="Color.Error" Size="Size.Small" />
+                </div>
+                <MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Class="mt-2">
+                    @_totalExpense.ToString("C", CultureInfo.GetCultureInfo("pt-BR"))
+                </MudText>
+            </MudCard>
+        </MudItem>
+
+        @* Card Saldo *@
+        <MudItem xs="12" sm="4">
+            <MudCard Elevation="2" Class="pa-4 rounded-lg" Style="border: 1px solid var(--mud-palette-warning);">
+                <div class="d-flex justify-space-between align-start">
+                    <MudText Typo="Typo.body1" Color="Color.Dark">Saldo de @MonthName</MudText>
+                    <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Color="Color.Warning" Size="Size.Small" />
+                </div>
+                <MudText Typo="Typo.h5" Style="font-weight: 700;" Color="@(_balance >= 0 ? Color.Dark : Color.Error)" Class="mt-2">
+                    @_balance.ToString("C", CultureInfo.GetCultureInfo("pt-BR"))
+                </MudText>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    @* LISTA DE ÚLTIMAS DESPESAS *@
+    <MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Class="mb-4">Últimas Despesas de @MonthName</MudText>
+    
+    <MudCard Elevation="2" Class="rounded-lg">
+        @if (_isLoading)
+        {
+            <div class="d-flex justify-center align-center pa-8">
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+            </div>
+        }
+        else if (!_latestExpenses.Any())
+        {
+            <div class="pa-6 text-center">
+                <MudText Typo="Typo.body1" Color="Color.Dark">Nenhuma despesa registrada para este mês.</MudText>
+            </div>
+        }
+        else
+        {
+            <MudList T="string" DisablePadding="true">
+                @foreach (var despesa in _latestExpenses)
+                {
+                    <MudListItem Class="pa-3 border-b-solid border-b-2 mud-border-lines-default">
+                        <div class="d-flex justify-space-between align-center">
+                            <div class="d-flex flex-column">
+                                <MudText Typo="Typo.subtitle1" Style="font-weight: 600;" Color="Color.Dark">@despesa.Description</MudText>
+                                <div class="d-flex align-center gap-2 mt-1">
+                                    @if (despesa.IsPaid)
+                                    {
+                                        <MudChip Size="Size.Small" Color="Color.Success" Variant="Variant.Filled" Class="mr-0" Style="font-size: 0.70rem; font-weight: 600;">Pago</MudChip>
+                                    }
+                                    else
+                                    {
+                                        <MudChip Size="Size.Small" Color="Color.Error" Variant="Variant.Filled" Class="mr-0 text-white" Style="font-size: 0.70rem; font-weight: 600;">Não pago</MudChip>
+                                    }
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@despesa.Category</MudText>
+                                </div>
+                            </div>
+                            
+                            <MudChip Size="Size.Small" Color="Color.Transparent" Variant="Variant.Filled" Style="font-weight: 700; font-size: 0.85rem;">
+                                @despesa.Amount.ToString("C", CultureInfo.GetCultureInfo("pt-BR"))
+                            </MudChip>
+                        </div>
+                    </MudListItem>
+                }
+            </MudList>
+        }
+    </MudCard>
+</MudContainer>
+
+@code {
+    private int _selectedMonth = DateTime.Now.Month;
+    private int _selectedYear = DateTime.Now.Year;
+    
+    private Guid _currentCoupleId = Guid.Empty;
+    private bool _isLoading = true;
+
+    // Totais Reais
+    private decimal _totalIncome = 0;
+    private decimal _totalExpense = 0;
+    private decimal _balance => _totalIncome - _totalExpense;
+
+    // Lista Real de Despesas
+    private List<TransactionDto> _latestExpenses = new();
+
+    private string MonthName => DateHelpers.GetMonthName(_selectedMonth);
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var appUser = await UserManager.GetUserAsync(user);
+
+            if (appUser?.CoupleId != null)
+            {
+                _currentCoupleId = appUser.CoupleId.Value;
+                await LoadDashboardDataAsync();
+            }
+        }
+    }
+
+    private async Task LoadDashboardDataAsync()
+    {
+        if (_currentCoupleId == Guid.Empty) return;
+
+        _isLoading = true;
+
+        try
+        {
+            // Busca as transações do casal no banco de dados para o mês selecionado
+            var transactions = await TransactionService.GetCoupleTransactionsForPeriodAsync(_currentCoupleId, _selectedMonth, _selectedYear);
+
+            // Calcula os totais com LINQ
+            _totalIncome = transactions.Where(t => t.Type == TransactionType.Income).Sum(t => t.Amount);
+            _totalExpense = transactions.Where(t => t.Type == TransactionType.Expense).Sum(t => t.Amount);
+
+            // Filtra as últimas 5 despesas (ordem decrescente de criação)
+            _latestExpenses = transactions
+                .Where(t => t.Type == TransactionType.Expense)
+                .OrderByDescending(t => t.CreatedAt)
+                .Take(5)
+                .ToList();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

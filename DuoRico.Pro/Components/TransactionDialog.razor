@@ -1,3 +1,4 @@
+@using DuoRico.Pro.Helpers
 @using DuoRico.Pro.Models
 @using DuoRico.Pro.DTOs
 @using DuoRico.Pro.Constants
@@ -29,10 +30,7 @@
                         @for (int i = 1; i <= 12; i++)
                         {
                             var month = i;
-                            var nameMonth = CultureInfo.GetCultureInfo("pt-BR").DateTimeFormat.GetMonthName(month);
-                            var monthFirstLetterUpper = char.ToUpper(nameMonth[0]) + nameMonth.Substring(1);
-                           
-                            <MudSelectItem Value="@month">@monthFirstLetterUpper</MudSelectItem>
+                            <MudSelectItem Value="@month">@DateHelpers.GetMonthName(month)</MudSelectItem>
                         }
                     </MudSelect>
                 </MudItem>
