@@ -1,28 +1,66 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
-
-<div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
-</div>
-
-<MudThemeProvider />
+<MudThemeProvider Theme="@DuoRicoTheme" />
 <MudDialogProvider />
 <MudSnackbarProvider />
 <MudPopoverProvider />
+
+<MudLayout>
+    @* Barra Superior (Header) *@
+    <MudAppBar Elevation="1" Color="Color.Surface">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudText Typo="Typo.h6" Class="ml-3" Style="font-weight: 700; color: var(--mud-palette-primary);">
+            DUO RICO <span style="font-weight: 300;">PRO</span>
+        </MudText>
+        <MudSpacer />
+    </MudAppBar>
+
+    @* Menu Lateral Escuro (Sidebar) *@
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="2" ClipMode="DrawerClipMode.Always" Style="background-color: #1a1a2e; color: white;">
+        <div class="pa-4 mt-2">
+            @* Aquele espaço extra para o menu respirar *@
+            <NavMenu />
+        </div>
+    </MudDrawer>
+
+    @* Área Central de Conteúdo (onde as páginas abrem) *@
+    <MudMainContent Style="background-color: #F4F6F8; min-height: 100vh;">
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@* Mensagem de Erro Padrão do Blazor *@
+<div id="blazor-error-ui" data-nosnippet>
+    Ocorreu um erro não tratado.
+    <a href="." class="reload">Recarregar</a>
+    <span class="dismiss">🗙</span>
+</div>
+
+@code {
+    private bool _drawerOpen = true;
+
+    private void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    // O seu tema dourado centralizado aqui
+    private MudTheme DuoRicoTheme = new MudTheme()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Primary = "#D4AF37", // Seu tom Ouro
+            AppbarBackground = "#ffffff", // Topo branco
+            Background = "#F4F6F8", // Fundo cinza claro
+            DrawerBackground = "#1a1a2e", // Menu escuro profundo
+            DrawerText = "#ffffff",
+            TextPrimary = "#333333"
+        },
+        LayoutProperties = new LayoutProperties()
+        {
+            DefaultBorderRadius = "12px"
+        }
+    };
+}
