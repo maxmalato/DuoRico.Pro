@@ -7,35 +7,44 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject UserManager<ApplicationUser> UserManager
 
-<MudNavMenu>
+<MudNavMenu Rounded="true" Margin="Margin.Dense" Class="pa-2">
     <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home" IconColor="Color.Inherit">
-        Dashboard
+        <MudText Typo="Typo.subtitle1" Class="fw-bold">
+            Início
+        </MudText>
     </MudNavLink>
 
+    <MudDivider DividerType="DividerType.Middle" />
+
     <MudNavLink Href="/incomes" Icon="@Icons.Material.Filled.ArrowUpward" IconColor="Color.Success">
-        <span style="font-weight: bold;">Receitas</span>
+        <MudText Typo="Typo.subtitle1" Color="Color.Success">
+            Receitas
+        </MudText>
     </MudNavLink>
 
     <MudNavLink Href="/expenses" Icon="@Icons.Material.Filled.ArrowDownward" IconColor="Color.Error">
-        <span style="font-weight: bold;">Despesas</span>
+        <MudText Typo="Typo.subtitle1" Color="Color.Error">
+            Despesas
+        </MudText>
     </MudNavLink>
 
     <AuthorizeView>
         <Authorized>
             <MudNavLink Href="Account/Manage" Icon="@Icons.Material.Filled.Person">
-                @context.User.Identity?.Name
+                <MudText>@context.User.Identity?.Name</MudText>
             </MudNavLink>
-
-            @* O form de logout estilizado para parecer um MudNavLink nativo *@
-            <form action="Account/Login" method="post">
+            <form action="Account/Logout" method="post">
                 <AntiforgeryToken />
+                    
                 <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                <button type="submit" class="d-flex align-center w-100 mud-ripple" style="background: transparent; border: none; cursor: pointer; padding: 12px 16px 12px 20px; color: var(--mud-palette-text-primary); text-align: left;">
-                    <MudIcon Icon="@Icons.Material.Filled.Logout" Class="mr-4" Style="margin-left: -2px;" />
-                    <MudText Typo="Typo.body2">Sair</MudText>
-                </button>
+
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Text" Color="Color.Error" Class="w-100 justify-start px-4 py-3" Style="text-transform: none; padding-left: 54px !important;">
+                    <MudIcon Icon="@Icons.Material.Filled.Logout" Class="mr-4" />
+                    <MudText Typo="Typo.body2" Style="font-weight: 700;">Sair</MudText>
+                </MudButton>
             </form>
         </Authorized>
+
         <NotAuthorized>
             <MudNavLink Href="Account/Register" Icon="@Icons.Material.Filled.PersonAdd">
                 Registrar
