@@ -1,0 +1,233 @@
+﻿@page "/incomes"
+
+@attribute [Authorize]
+
+@using DuoRico.Pro.Components.Shared
+@using Microsoft.AspNetCore.Authorization
+@using System.Globalization
+@using DuoRico.Pro.Models
+@using DuoRico.Pro.Data
+@using DuoRico.Pro.Helpers
+@using Microsoft.AspNetCore.Identity
+
+@inject ITransactionService TransactionService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject UserManager<ApplicationUser> UserManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Duo Rico Pro - Receitas</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6 mb-8">
+    @* CABEÇALHO E FILTRO *@
+    <div class="d-flex justify-space-between align-center mb-8">
+        <div class="d-flex align-center gap-2">
+            <MudIcon Icon="@Icons.Material.Outlined.ArrowCircleUp" Color="Color.Success" Size="Size.Large" />
+            <MudText Typo="Typo.h4" Color="Color.Success" Style="font-weight: 700;">Receitas de @DateHelpers.GetMonthName(_selectedMonth)</MudText>
+        </div>
+        
+       <PeriodSelector @bind-Month="_selectedMonth"
+                       @bind-Year="_selectedYear"
+                       IsLoading="_isLoading"
+                        OnFilterChanged="LoadDataAsync" />
+    </div>
+
+    @* NOVA RECEITA *@
+    <div class="d-flex justify-space-between align-center mb-6 gap-4">
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Success"
+                   StartIcon="@Icons.Material.Filled.AddCircleOutline"
+                   Style="font-weight: 600; text-transform: none; border-radius: 4px;"
+                   Class="px-4 py-2">
+            Nova Receita
+        </MudButton>
+
+        <MudTextField @bind-Value="_searchString"
+                      Placeholder="Pesquisar por descrição ou categoria..."
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      IconSize="Size.Medium"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Style="width: 400px; background-color: white;" />
+    </div>
+
+    @* CARDS DE RESUMO (CHIPS) *@
+    <div class="d-flex gap-3 mb-6">
+        @* Card Total *@
+        <div class="d-flex align-center rounded pa-2" style="border: 1px solid var(--mud-palette-success); background-color: white;">
+            <MudText Typo="Typo.body2" Color="Color.Success" Class="mr-1">Total:</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Success" Style="font-weight: 700;">@_totalIncome.ToString("C", _culture)</MudText>
+        </div>
+
+        @* Card Pago *@
+        <div class="d-flex align-center rounded pa-2" style="border: 1px solid var(--mud-palette-success); background-color: white;">
+            <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Filled" Class="mr-2 ma-0" Style="font-weight: 600; font-size: 0.70rem;">Pago</MudChip>
+            <MudText Typo="Typo.body2" Color="Color.Success" Style="font-weight: 700;">@_totalPaid.ToString("C", _culture)</MudText>
+        </div>
+
+        @* Card Não Pago *@
+        <div class="d-flex align-center rounded pa-2" style="border: 1px solid var(--mud-palette-success); background-color: white;">
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Class="mr-2 ma-0 text-white" Style="background-color: #6c757d; font-weight: 600; font-size: 0.70rem;">Não pago</MudChip>
+            <MudText Typo="Typo.body2" Color="Color.Success" Style="font-weight: 700;">@_totalUnpaid.ToString("C", _culture)</MudText>
+        </div>
+    </div>
+
+    @* TABELA DE RECEITAS *@
+    <MudTable Items="@_transactions"
+              Dense="false"
+              Hover="true"
+              Filter="FilterFunc"
+              Loading="@_isLoading"
+              Elevation="0"
+              Class="bg-transparent">
+        <HeaderContent>
+            <MudTh Style="font-weight: 700; color: #333;">Descrição</MudTh>
+            <MudTh Style="font-weight: 700; color: #333;">Categoria</MudTh>
+            <MudTh Style="font-weight: 700; color: #333;">Status</MudTh>
+            <MudTh Style="font-weight: 700; color: #333;" Class="text-end">Valor</MudTh>
+            <MudTh Style="font-weight: 700; color: #333;" Class="text-center">Ações</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Descrição">
+                <MudText Typo="Typo.subtitle2" Style="font-weight: 700; color: #333;">@context.Description</MudText>
+                <MudText Typo="Typo.caption" Style="color: #888;">
+                    @context.CreatedAt.ToString("dd/MM/yyyy")
+                    @* Exemplo para parcelas se existir na sua model: (1/3) *@
+                </MudText>
+            </MudTd>
+            
+            <MudTd DataLabel="Categoria">
+                <MudText Typo="Typo.body2" Style="color: #333;">@context.Category</MudText>
+            </MudTd>
+            
+            <MudTd DataLabel="Status">
+                @* CHIP INTERATIVO *@
+                @if (context.IsPaid)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Filled" OnClick="@(() => TogglePaymentStatusAsync(context))" Style="font-weight: 600; font-size: 0.75rem; cursor: pointer;">Pago</MudChip>
+                }
+                else
+                {
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" OnClick="@(() => TogglePaymentStatusAsync(context))" Class="text-white" Style="background-color: #6c757d; font-weight: 600; font-size: 0.75rem; cursor: pointer;">Não pago</MudChip>
+                }
+            </MudTd>
+            
+            <MudTd DataLabel="Valor" Class="text-end">
+                <MudText Typo="Typo.body2" Color="Color.Success" Style="font-weight: 700;">@context.Amount.ToString("C", _culture)</MudText>
+            </MudTd>
+            
+            <MudTd DataLabel="Ações" Class="text-center">
+                <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Color="Color.Default" />
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Typo="Typo.body1" Class="py-4">Nenhuma receita encontrada para este período.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+
+</MudContainer>
+
+@code {
+    private int _selectedMonth = DateTime.Now.Month;
+    private int _selectedYear = DateTime.Now.Year;
+    private Guid _currentCoupleId = Guid.Empty;
+    private bool _isLoading = true;
+    private string _searchString = "";
+    private CultureInfo _culture = CultureInfo.GetCultureInfo("pt-BR");
+
+    private List<TransactionDto> _transactions = new();
+
+    private decimal _totalIncome = 0;
+    private decimal _totalPaid = 0;
+    private decimal _totalUnpaid = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var appUser = await UserManager.GetUserAsync(user);
+
+            if (appUser?.CoupleId != null)
+            {
+                _currentCoupleId = appUser.CoupleId.Value;
+                await LoadDataAsync();
+            }
+        }
+    }
+
+    private async Task LoadDataAsync()
+    {
+        if (_currentCoupleId == Guid.Empty) return;
+
+        _isLoading = true;
+
+        StateHasChanged();
+
+        try
+        {
+            var transactions = await TransactionService.GetCoupleTransactionsForPeriodAsync(_currentCoupleId, _selectedMonth, _selectedYear);
+            _transactions = transactions.Where(t => t.Type == TransactionType.Income).ToList();
+
+            CalculateSummaries();
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Erro ao carregar as receitas. Tente novamente.", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void CalculateSummaries()
+    {
+        _totalIncome = _transactions.Sum(t => t.Amount);
+        _totalPaid = _transactions.Where(t => t.IsPaid).Sum(t => t.Amount);
+        _totalUnpaid = _transactions.Where(t => !t.IsPaid).Sum(t => t.Amount);
+    }
+
+    private bool FilterFunc(TransactionDto transaction)
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+        if (transaction.Description.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (transaction.Category.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+
+    private async Task TogglePaymentStatusAsync(TransactionDto transaction)
+    {
+        transaction.IsPaid = !transaction.IsPaid;
+
+        try
+        {
+            var updateDto = new UpdateTransactionDto
+            {
+                Id = transaction.Id,
+                Description = transaction.Description,
+                Amount = transaction.Amount,
+                Category = transaction.Category,
+                IsPaid = transaction.IsPaid,
+            };
+
+            await TransactionService.UpdateTransactionAsync(updateDto, _currentCoupleId);
+
+            CalculateSummaries();
+            
+            Snackbar.Add($"{transaction.Description} atualizado.", Severity.Success);
+        }
+        catch (Exception)
+        {
+            transaction.IsPaid = !transaction.IsPaid;
+
+            Snackbar.Add($"Erro ao atualizar o status de {transaction.Description}. Tente novamente.", Severity.Error);
+        }
+    }
+
+}

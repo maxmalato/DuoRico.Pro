@@ -91,7 +91,7 @@
         {
             var appUser = await UserManager.GetUserAsync(user);
 
-            if(appUser.Id != null && appUser.CoupleId.HasValue)
+            if(appUser!.Id != null && appUser.CoupleId.HasValue)
             {
                 _currentUserId = appUser.Id;
                 _currentCoupleId = appUser.CoupleId.Value;
