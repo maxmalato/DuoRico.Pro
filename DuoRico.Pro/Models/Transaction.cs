@@ -54,8 +54,10 @@ public class Transaction
         int year,
         int installmentNumber, 
         int totalInstallments,
-        bool isPaid, 
-        string userId)
+        bool isPaid,
+        string userId,
+        Guid? installmentGroupId = null
+        )
     {
         // Validações de domínio
         if(string.IsNullOrWhiteSpace(description))
@@ -80,7 +82,7 @@ public class Transaction
 
         if(TotalInstallments > 1)
         {
-            InstallmentGroupId = Guid.NewGuid();
+            InstallmentGroupId = installmentGroupId ?? Guid.NewGuid();
         }
     }
 

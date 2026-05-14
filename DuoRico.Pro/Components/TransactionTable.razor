@@ -1,3 +1,5 @@
+@page "/teste"
+
 @using Microsoft.AspNetCore.Identity
 @using System.Globalization
 @using DuoRico.Pro.Models
@@ -170,7 +172,7 @@
             };
 
         var parameters = new DialogParameters { ["Model"] = updateModel };
-        var dialog = await DialogService.ShowAsync<EditTransactionDialog>("Editar Transação", parameters, options);
+        var dialog = await DialogService.ShowAsync<EditTransactionDialog_remove>("Editar Transação", parameters, options);
         var result = await dialog.Result;
 
         if (!result!.Canceled && result.Data != null)

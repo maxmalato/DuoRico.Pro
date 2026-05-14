@@ -38,20 +38,40 @@ public class TransactionService(ITransactionRepository repository) : ITransactio
 
     public async Task<bool> CreateTransactionAsync(CreateTransactionDto createTransactionDto, string userId, Guid coupleId)
     {
-        var transaction = new Transaction(
-            description: createTransactionDto.Description,
-            amount: createTransactionDto.Amount,
-            category: createTransactionDto.Category,
-            type: createTransactionDto.Type,
-            month: createTransactionDto.Month,
-            year: createTransactionDto.Year,
-            installmentNumber: 1,
-            totalInstallments: createTransactionDto.InstallmentNumber,
-            isPaid: createTransactionDto.IsPaid,
-            userId: userId
-        );
+        int totalInstallments = createTransactionDto.InstallmentNumber > 0 ? createTransactionDto.InstallmentNumber : 1;
+        Guid? groupId = totalInstallments > 1 ? Guid.NewGuid() : null;
 
-        await repository.AddAsync(transaction);
+        int currentMonth = createTransactionDto.Month;
+        int currentYear = createTransactionDto.Year;
+
+        for (int i = 1; i <= totalInstallments; i++)
+        {
+            bool isParcelPaid = (i == 1) ? createTransactionDto.IsPaid : false;
+
+            var transaction = new Transaction(
+                   description: createTransactionDto.Description,
+                   amount: createTransactionDto.Amount / totalInstallments,
+                   category: createTransactionDto.Category,
+                   type: createTransactionDto.Type,
+                   month: currentMonth,
+                   year: currentYear,
+                   installmentNumber: i,
+                   totalInstallments: totalInstallments,
+                   isPaid: isParcelPaid,
+                   userId: userId,
+                   installmentGroupId: groupId
+               );
+
+            await repository.AddAsync(transaction);
+
+            // Incrementa mês e ano para próximas parcelas
+            currentMonth++;
+            if (currentMonth > 12)
+            {
+                currentMonth = 1;
+                currentYear++;
+            }
+        }
 
         return true;
     }
