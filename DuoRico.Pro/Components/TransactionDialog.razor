@@ -1,16 +1,17 @@
-@using DuoRico.Pro.Helpers
-@using DuoRico.Pro.DTOs
-@using DuoRico.Pro.Constants
 @using System.Globalization
+@using DuoRico.Pro.Constants
+@using DuoRico.Pro.DTOs
+@using DuoRico.Pro.Helpers
+@using DuoRico.Pro.Models
 
 <MudDialog>
     <DialogContent>
-        <MudForm @ref="_form", Model="@Model">
+        <MudForm @ref="_form" , Model="@Model">
             <MudGrid>
                 <MudItem xs="12">
                     <MudTextField @bind-Value="Model.Description" Label="Descrição*" For="@(() => Model.Description)" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
-                
+
                 <MudItem xs="12" sm="6">
                     <MudNumericField @bind-Value="Model.Amount" Label="Valor*" For="@(() => Model.Amount)" Format="N2" Culture="@(new CultureInfo("pt-BR"))" Min="0.01m" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
@@ -23,7 +24,7 @@
                         }
                     </MudSelect>
                 </MudItem>
-                
+
                 <MudItem xs="12" sm="4">
                     <MudSelect @bind-Value="Model.Month" Label="Mês" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense">
                         @for (int i = 1; i <= 12; i++)
@@ -52,7 +53,7 @@
                         }
                     </MudSelect>
                 </MudItem>
-                
+
                 <MudItem xs="12" Class="d-flex align-center">
                     <MudCheckBox @bind-Value="Model.IsPaid" Label="Pago?" Color="Color.Default" />
                 </MudItem>
@@ -60,19 +61,30 @@
         </MudForm>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" Class="px-4" Style="background-color: #6c757d; color: white; text-transform: none;">Cancelar</MudButton>
-        <MudButton Variant="Variant.Filled" OnClick="Submit" Class="px-6" Style="background-color: #dc3545; color: white; text-transform: none;">Criar</MudButton>
+        <MudButton OnClick="Cancel" Class="px-4" Variant="Variant.Text" Color="Color.Error">
+            <MudIcon Icon="@Icons.Material.Filled.Close" Size="Size.Small" Class="mr-1" />
+            Cancelar
+        </MudButton>
+        <MudButton Variant="Variant.Filled" OnClick="Submit" Class="px-6" Color="Color.Primary">
+            <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="mr-1" />
+            Criar
+        </MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
-    
+
     [Parameter] public CreateTransactionDto Model { get; set; } = new();
+    [Parameter] public TransactionType Type { get; set; }
+    [Parameter] public Color ColorTheme { get; set; }
+    [Parameter] public Guid CoupleId { get; set; } = Guid.Empty;
+
+
 
     private MudForm _form = null!;
     private IReadOnlyList<string> Categories => CategoryConstants.GetCategoriesByType(Model.Type);
-    
+
     protected override void OnInitialized()
     {
         if (Model.Month == 0) Model.Month = DateTime.Now.Month;

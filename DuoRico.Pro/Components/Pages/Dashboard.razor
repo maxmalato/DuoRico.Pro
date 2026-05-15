@@ -174,7 +174,7 @@
             _latestExpenses = transactions
                 .Where(t => t.Type == TransactionType.Expense)
                 .OrderByDescending(t => t.CreatedAt)
-                .Take(5)
+                .Take(3)
                 .ToList();
         }
         finally

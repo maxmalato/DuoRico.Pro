@@ -1,0 +1,268 @@
+@using System.Globalization
+@using DuoRico.Pro.Models
+@using DuoRico.Pro.Data
+@using DuoRico.Pro.Helpers
+@using Microsoft.AspNetCore.Identity
+
+@inject ITransactionService TransactionService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject UserManager<ApplicationUser> UserManager
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<div class="d-flex justify-space-between align-center mb-8">
+    <div class="d-flex align-center gap-2">
+        <MudIcon Icon="@Icon" Color="@ThemeColor" Size="Size.Large" />
+        <MudText Typo="Typo.h4" Color="@ThemeColor" Style="font-weight: 700;">@PageTitle de @DateHelpers.GetMonthName(_selectedMonth)</MudText>
+    </div>
+
+    <PeriodSelector @bind-Month="_selectedMonth"
+                    @bind-Year="_selectedYear"
+                    IsLoading="_isLoading"
+                    OnFilterChanged="LoadDataAsync" />
+</div>
+
+<div class="d-flex justify-space-between align-center mb-6 gap-4">
+    <MudButton Variant="Variant.Filled"
+               Color="@ThemeColor"
+               StartIcon="@Icons.Material.Filled.AddCircleOutline"
+               Style="font-weight: 600; text-transform: none; border-radius: 4px;"
+               Class="px-4 py-2"
+               OnClick="@(() => OpenNewTransactionDialog())">
+        Novo(a) @PageTitle
+    </MudButton>
+
+    <MudTextField @bind-Value="_searchString"
+                  Placeholder="Pesquisar por descrição ou categoria..."
+                  Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search"
+                  IconSize="Size.Medium"
+                  Variant="Variant.Outlined"
+                  Margin="Margin.Dense"
+                  Style="width: 400px; background-color: white;" />
+</div>
+
+@* CARDS DE RESUMO *@
+<div class="d-flex gap-3 mb-6">
+    <div class="d-flex align-center rounded pa-2" style="border: 1px solid var(--mud-palette-@ThemeColor.ToString().ToLower()); background-color: white;">
+        <MudText Typo="Typo.body2" Color="@ThemeColor" Class="mr-1">Total:</MudText>
+        <MudText Typo="Typo.body2" Color="@ThemeColor" Style="font-weight: 700;">@_totalAmount.ToString("C", _culture)</MudText>
+    </div>
+    <div class="d-flex align-center rounded pa-2" style="border: 1px solid var(--mud-palette-@ThemeColor.ToString().ToLower()); background-color: white;">
+        <MudChip T="string" Size="Size.Small" Color="@ThemeColor" Variant="Variant.Filled" Class="mr-2 ma-0" Style="font-weight: 600; font-size: 0.70rem;">Pago</MudChip>
+        <MudText Typo="Typo.body2" Color="@ThemeColor" Style="font-weight: 700;">@_totalPaid.ToString("C", _culture)</MudText>
+    </div>
+    <div class="d-flex align-center rounded pa-2" style="border: 1px solid var(--mud-palette-@ThemeColor.ToString().ToLower()); background-color: white;">
+        <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Class="mr-2 ma-0 text-white" Style="background-color: #6c757d; font-weight: 600; font-size: 0.70rem;">Pendente</MudChip>
+        <MudText Typo="Typo.body2" Color="@ThemeColor" Style="font-weight: 700;">@_totalUnpaid.ToString("C", _culture)</MudText>
+    </div>
+</div>
+
+<MudTable Items="@_transactions" Dense="false" Hover="true" Filter="FilterFunc" Loading="@_isLoading" Elevation="0" Class="bg-transparent">
+    <HeaderContent>
+        <MudTh Style="font-weight: 700; color: #333;">Descrição</MudTh>
+        <MudTh Style="font-weight: 700; color: #333;">Categoria</MudTh>
+        <MudTh Style="font-weight: 700; color: #333;">Status</MudTh>
+        <MudTh Style="font-weight: 700; color: #333;" Class="text-end">Valor</MudTh>
+        <MudTh Style="font-weight: 700; color: #333;" Class="text-center">Ações</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Descrição">
+            <MudText Typo="Typo.subtitle2" Style="font-weight: 700; color: #333;">@context.Description</MudText>
+            <MudText Typo="Typo.caption" Style="color: #666">@context.CreatedAt.ToString("dd/MM/yyyy")</MudText>
+            @if (context.TotalInstallments > 1)
+            {
+                <MudText Typo="Typo.caption" Class="ml-1">(@context.InstallmentNumber/@context.TotalInstallments)</MudText>
+            }
+        </MudTd>
+        <MudTd DataLabel="Categoria">@context.Category</MudTd>
+        <MudTd DataLabel="Status">
+            <MudChip T="string" Size="Size.Small" Color="@(context.IsPaid ? Color.Success : Color.Default)"
+                     Variant="Variant.Filled" OnClick="@(() => TogglePaymentStatusAsync(context))"
+                     Style="@(context.IsPaid ? "" : "background-color: #6c757d; color: white;")">
+                @(context.IsPaid ? "Pago" : "Não pago")
+            </MudChip>
+        </MudTd>
+        <MudTd DataLabel="Valor" Class="text-end">
+            <MudText Typo="Typo.body2" Color="@ThemeColor" Style="font-weight: 700;">@context.Amount.ToString("C", _culture)</MudText>
+        </MudTd>
+        <MudTd DataLabel="Ações" Style="text-align: center">
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true">
+                <MudMenuItem OnClick="@(() => OpenEditTransactionDialog(context))">Editar</MudMenuItem>
+                <MudMenuItem OnClick="@(() => DeleteTransaction(context))" Style="color: var(--mud-palette-error);">Excluir</MudMenuItem>
+            </MudMenu>
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+    [Parameter] public TransactionType Type { get; set; }
+    [Parameter] public Color ThemeColor { get; set; }
+    [Parameter] public string PageTitle { get; set; } = "";
+    [Parameter] public string Icon { get; set; } = "";
+
+    private int _selectedMonth = DateTime.Now.Month;
+    private int _selectedYear = DateTime.Now.Year;
+    private string _currentUserId = "";
+    private Guid _currentCoupleId = Guid.Empty;
+    private bool _isLoading = true;
+    private string _searchString = "";
+    private CultureInfo _culture = CultureInfo.GetCultureInfo("pt-BR");
+    private List<TransactionDto> _transactions = new();
+    private decimal _totalAmount, _totalPaid, _totalUnpaid;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var appUser = await UserManager.GetUserAsync(user);
+            if (appUser != null)
+            {
+                _currentUserId = appUser.Id;
+                _currentCoupleId = appUser.CoupleId ?? Guid.Empty;
+                await LoadDataAsync();
+            }
+        }
+    }
+
+    private async Task LoadDataAsync()
+    {
+        if (_currentCoupleId == Guid.Empty) return;
+        _isLoading = true;
+        try
+        {
+            var data = await TransactionService.GetCoupleTransactionsForPeriodAsync(_currentCoupleId, _selectedMonth, _selectedYear);
+            _transactions = data
+                .Where(t => t.Type == Type)
+                .OrderBy(t => t.IsPaid)
+                .ThenByDescending(t => t.CreatedAt)
+                .ToList();
+
+            CalculateSummaries();
+        }
+        finally { _isLoading = false; StateHasChanged(); }
+    }
+
+    private void CalculateSummaries()
+    {
+        _totalAmount = _transactions.Sum(t => t.Amount);
+        _totalPaid = _transactions.Where(t => t.IsPaid).Sum(t => t.Amount);
+        _totalUnpaid = _transactions.Where(t => !t.IsPaid).Sum(t => t.Amount);
+    }
+
+    private bool FilterFunc(TransactionDto t) =>
+        string.IsNullOrWhiteSpace(_searchString) || t.Description.Contains(_searchString, StringComparison.OrdinalIgnoreCase) || t.Category.Contains(_searchString, StringComparison.OrdinalIgnoreCase);
+
+    private async Task TogglePaymentStatusAsync(TransactionDto t)
+    {
+        t.IsPaid = !t.IsPaid;
+        try
+        {
+            await TransactionService
+                .UpdateTransactionAsync(new UpdateTransactionDto { Id = t.Id, IsPaid = t.IsPaid, Description = t.Description, Amount = t.Amount, Category = t.Category }, _currentCoupleId);
+
+            await LoadDataAsync();
+
+            CalculateSummaries();
+
+            Snackbar.Add("Status atualizado.", Severity.Success);
+        }
+        catch { t.IsPaid = !t.IsPaid; Snackbar.Add("Erro ao atualizar.", Severity.Error); }
+    }
+
+    private async Task OpenNewTransactionDialog()
+    {
+        // 1. Passamos os parâmetros EXATOS que o Dialog espera, usando o 'Type' atual (Receita ou Despesa)
+        var parameters = new DialogParameters<TransactionDialog>
+        {
+            { x => x.Type, Type },
+            { x => x.ColorTheme, ThemeColor },
+            { x => x.CoupleId, _currentCoupleId }
+        };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+        // Abre o Modal com o título dinâmico (Ex: "Nova Despesa")
+        var dialog = await DialogService.ShowAsync<TransactionDialog>($"Nova {PageTitle}", parameters, options);
+        var result = await dialog.Result;
+
+        // 2. Se o usuário preencheu e clicou em Salvar
+        if (!result.Canceled && result.Data is CreateTransactionDto newTransaction)
+        {
+            try
+            {
+                // Forçamos o tipo correto mais uma vez por segurança
+                newTransaction.Type = Type;
+
+                // 3. AGORA SIM! Chamamos o seu backend para salvar no banco
+                var success = await TransactionService.CreateTransactionAsync(newTransaction, _currentUserId, _currentCoupleId);
+
+                if (success)
+                {
+                    Snackbar.Add($"{PageTitle} criada com sucesso!", Severity.Success);
+
+                    // Recarrega a tabela com a nova transação
+                    await LoadDataAsync();
+                    StateHasChanged();
+                }
+                else
+                {
+                    Snackbar.Add("Erro ao criar a transação. Verifique os dados.", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Ocorreu um erro inesperado: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private async Task OpenEditTransactionDialog(TransactionDto t)
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+        var updateModel = new UpdateTransactionDto
+        {
+            Id = t.Id,
+            Description = t.Description,
+            Amount = t.Amount,
+            Category = t.Category,
+            IsPaid = t.IsPaid,
+            Type = t.Type
+        };
+
+        var parameters = new DialogParameters { ["Model"] = updateModel };
+        var dialog = await DialogService.ShowAsync<EditTransactionDialog>("Editar Transação", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result!.Canceled && result.Data != null)
+        {
+            var updatedTransaction = (UpdateTransactionDto)result.Data;
+
+            var success = await TransactionService.UpdateTransactionAsync(updatedTransaction, _currentCoupleId);
+
+            if (success)
+            {
+                Snackbar.Add("Transação atualizada com sucesso!", Severity.Success);
+
+                await LoadDataAsync();
+
+                StateHasChanged();
+            }
+            else
+            {
+                Snackbar.Add("Erro ao atualizar a transação", Severity.Error);
+            }
+        }
+    }
+
+    private async Task DeleteTransaction(TransactionDto t)
+    {
+        if ((await DialogService.ShowMessageBoxAsync("Excluir", $"Deseja excluir {t.Description}?", "Sim", "Não")) == true)
+        {
+            if (await TransactionService.DeleteTransactionAsync(t.Id, _currentCoupleId)) await LoadDataAsync();
+        }
+    }
+}
