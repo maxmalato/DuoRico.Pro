@@ -1,0 +1,79 @@
+@using DuoRico.Pro.Models
+@using System.Globalization
+
+<MudCard Elevation="2" Class="pa-5 rounded-lg mb-8">
+    <div class="d-flex justify-space-between align-center mb-2">
+        <div class="d-flex align-center gap-2">
+            <MudIcon Icon="@Icons.Material.Filled.CreditCard" Color="Color.Primary" />
+            <MudText Typo="Typo.h6" Style="font-weight: 700;" Color="Color.Dark">Comprometimento de Renda</MudText>
+        </div>
+        
+        @if (_percentageUsed <= 10)
+        {
+            <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Filled" Style="font-weight: 600;">Saudável</MudChip>
+        }
+        else
+        {
+            <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled" Style="font-weight: 600;">Alerta de Limite</MudChip>
+        }
+    </div>
+
+    <MudText Typo="Typo.body2" Color="Color.Default" Class="mb-4">
+        Os gastos no cartão de crédito não devem ultrapassar 10% da sua receita mensal (@_creditCardLimit.ToString("C", _culture)).
+    </MudText>
+
+    @{
+        var progressColor = _percentageUsed <= 10 ? Color.Success : Color.Error;
+        var visualBarFill = Math.Min(_progressBarValue, 100); 
+    }
+
+    <MudProgressLinear Color="@progressColor" Value="@visualBarFill" Size="Size.Large" Class="rounded-lg" Style="height: 24px;">
+        <MudText Typo="Typo.subtitle2" Color="Color.Dark" Style="font-weight: 700;">
+            @_percentageUsed.ToString("F1")%
+        </MudText>
+    </MudProgressLinear>
+
+    <div class="d-flex justify-space-between mt-2">
+        <MudText Typo="Typo.caption" Color="Color.Dark" Style="font-weight: 600;">
+            Usado: @_creditCardTotal.ToString("C", _culture)
+        </MudText>
+        <MudText Typo="Typo.caption" Color="Color.Default">
+            Limite Seguro: @_creditCardLimit.ToString("C", _culture)
+        </MudText>
+    </div>
+</MudCard>
+
+@code {
+    // O que o componente recebe do mundo exterior
+    [Parameter] public decimal TotalIncome { get; set; }
+    [Parameter] public IEnumerable<TransactionDto> Transactions { get; set; } = new List<TransactionDto>();
+
+    // Variáveis internas para cálculo
+    private decimal _creditCardTotal = 0;
+    private decimal _creditCardLimit = 0;
+    private double _percentageUsed = 0;
+    private double _progressBarValue = 0;
+    private CultureInfo _culture = CultureInfo.GetCultureInfo("pt-BR");
+
+    // Sempre que o Dashboard passar dados novos, esse método recalcula tudo
+    protected override void OnParametersSet()
+    {
+        _creditCardLimit = TotalIncome * 0.10m;
+
+        // Todas as despesas de Cartão de crédito (parceladas ou à vista)
+        _creditCardTotal = Transactions
+            .Where(t => t.Type == TransactionType.Expense && t.Category == "Cartão de crédito")
+            .Sum(t => t.Amount);
+
+        if (TotalIncome > 0)
+        {
+            _percentageUsed = (double)(_creditCardTotal / TotalIncome) * 100;
+            _progressBarValue = (double)(_creditCardTotal / _creditCardLimit) * 100;
+        }
+        else
+        {
+            _percentageUsed = _creditCardTotal > 0 ? 100 : 0;
+            _progressBarValue = _creditCardTotal > 0 ? 100 : 0;
+        }
+    }
+}

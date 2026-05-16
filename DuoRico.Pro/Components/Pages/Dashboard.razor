@@ -40,7 +40,7 @@
                     <MudIcon Icon="@Icons.Material.Filled.ArrowUpward" Color="Color.Success" Size="Size.Small" />
                 </div>
                 <MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Class="mt-2">
-                    @_totalIncome.ToString("C", CultureInfo.GetCultureInfo("pt-BR"))
+                    @_summary.TotalIncome.ToString("C", CultureInfo.GetCultureInfo("pt-BR"))
                 </MudText>
             </MudCard>
         </MudItem>
@@ -53,7 +53,7 @@
                     <MudIcon Icon="@Icons.Material.Filled.ArrowDownward" Color="Color.Error" Size="Size.Small" />
                 </div>
                 <MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Class="mt-2">
-                    @_totalExpense.ToString("C", CultureInfo.GetCultureInfo("pt-BR"))
+                    @_summary.TotalExpense.ToString("C", CultureInfo.GetCultureInfo("pt-BR"))
                 </MudText>
             </MudCard>
         </MudItem>
@@ -65,12 +65,15 @@
                     <MudText Typo="Typo.body1" Color="Color.Dark">Saldo de @MonthName</MudText>
                     <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Color="Color.Warning" Size="Size.Small" />
                 </div>
-                <MudText Typo="Typo.h5" Style="font-weight: 700;" Color="@(_balance >= 0 ? Color.Dark : Color.Error)" Class="mt-2">
-                    @_balance.ToString("C", CultureInfo.GetCultureInfo("pt-BR"))
+                <MudText Typo="Typo.h5" Style="font-weight: 700;" Color="@(_summary.Balance >= 0 ? Color.Dark : Color.Error)" Class="mt-2">
+                    @_summary.Balance.ToString("C", CultureInfo.GetCultureInfo("pt-BR"))
                 </MudText>
             </MudCard>
         </MudItem>
     </MudGrid>
+    
+    @* REGRA DOS 10% NO CARTÃO DE CRÉDITO *@
+    <CreditCardHealthWidget TotalIncome="_summary.TotalIncome" Transactions="_monthlyTransactions"/>
 
     @* LISTA DE ÚLTIMAS DESPESAS *@
     <MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Class="mb-4">Últimas Despesas de @MonthName</MudText>
@@ -128,13 +131,13 @@
     private Guid _currentCoupleId = Guid.Empty;
     private bool _isLoading = true;
 
-    // Totais Reais
-    private decimal _totalIncome = 0;
-    private decimal _totalExpense = 0;
-    private decimal _balance => _totalIncome - _totalExpense;
+    private TransactionSummaryDto _summary = new();
 
     // Lista Real de Despesas
     private List<TransactionDto> _latestExpenses = new();
+    
+    // Regra dos 10% no cartão de crédito
+    private List<TransactionDto> _monthlyTransactions = new();
 
     private string MonthName => DateHelpers.GetMonthName(_selectedMonth);
 
@@ -166,9 +169,10 @@
             // Busca as transações do casal no banco de dados para o mês selecionado
             var transactions = await TransactionService.GetCoupleTransactionsForPeriodAsync(_currentCoupleId, _selectedMonth, _selectedYear);
 
+            
             // Calcula os totais com LINQ
-            _totalIncome = transactions.Where(t => t.Type == TransactionType.Income).Sum(t => t.Amount);
-            _totalExpense = transactions.Where(t => t.Type == TransactionType.Expense).Sum(t => t.Amount);
+            _summary.TotalIncome = transactions.Where(t => t.Type == TransactionType.Income).Sum(t => t.Amount);
+            _summary.TotalExpense = transactions.Where(t => t.Type == TransactionType.Expense).Sum(t => t.Amount);
 
             // Filtra as últimas 5 despesas (ordem decrescente de criação)
             _latestExpenses = transactions
@@ -176,6 +180,9 @@
                 .OrderByDescending(t => t.CreatedAt)
                 .Take(3)
                 .ToList();
+            
+            // Busca os dados da regra dos 10% no cartão de créidito
+            _monthlyTransactions = await TransactionService.GetCoupleTransactionsForPeriodAsync(_currentCoupleId, _selectedMonth, _selectedYear);
         }
         finally
         {

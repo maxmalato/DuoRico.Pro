@@ -18,9 +18,9 @@
 
                 <MudItem xs="12" sm="6">
                     <MudSelect @bind-Value="Model.Category" For="@(() => Model.Category)" Label="Categoria*" Variant="Variant.Outlined" Margin="Margin.Dense">
-                        @foreach (var categoria in Categories)
+                        @foreach (var categorie in Categories)
                         {
-                            <MudSelectItem Value="@categoria">@categoria</MudSelectItem>
+                            <MudSelectItem Value="@categorie">@categorie</MudSelectItem>
                         }
                     </MudSelect>
                 </MudItem>
@@ -79,14 +79,13 @@
     [Parameter] public TransactionType Type { get; set; }
     [Parameter] public Color ColorTheme { get; set; }
     [Parameter] public Guid CoupleId { get; set; } = Guid.Empty;
-
-
-
+    
     private MudForm _form = null!;
-    private IReadOnlyList<string> Categories => CategoryConstants.GetCategoriesByType(Model.Type);
+    private IReadOnlyList<string> Categories => CategoryConstants.GetCategoriesByType(Type);
 
     protected override void OnInitialized()
     {
+        Model.Type = Type;
         if (Model.Month == 0) Model.Month = DateTime.Now.Month;
         if (Model.Year == 0) Model.Year = DateTime.Now.Year;
         if (Model.InstallmentNumber == 0) Model.InstallmentNumber = 1;
