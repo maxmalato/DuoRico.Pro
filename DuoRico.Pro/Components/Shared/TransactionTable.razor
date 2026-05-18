@@ -49,7 +49,9 @@
         <MudText Typo="Typo.body2" Color="@ThemeColor" Style="font-weight: 700;">@_totalAmount.ToString("C", _culture)</MudText>
     </div>
     <div class="d-flex align-center rounded pa-2" style="border: 1px solid var(--mud-palette-@ThemeColor.ToString().ToLower()); background-color: white;">
-        <MudChip T="string" Size="Size.Small" Color="@ThemeColor" Variant="Variant.Filled" Class="mr-2 ma-0" Style="font-weight: 600; font-size: 0.70rem;">Pago</MudChip>
+        <MudChip T="string" Size="Size.Small" Color="@Color.Success" Variant="Variant.Filled" Class="mr-2 ma-0" Style="font-weight: 600; font-size: 0.70rem;">
+            @(Type == TransactionType.Income ? "Recebido" : "Pago")
+        </MudChip>
         <MudText Typo="Typo.body2" Color="@ThemeColor" Style="font-weight: 700;">@_totalPaid.ToString("C", _culture)</MudText>
     </div>
     <div class="d-flex align-center rounded pa-2" style="border: 1px solid var(--mud-palette-@ThemeColor.ToString().ToLower()); background-color: white;">
@@ -80,7 +82,9 @@
             <MudChip T="string" Size="Size.Small" Color="@(context.IsPaid ? Color.Success : Color.Default)"
                      Variant="Variant.Filled" OnClick="@(() => TogglePaymentStatusAsync(context))"
                      Style="@(context.IsPaid ? "" : "background-color: #6c757d; color: white;")">
-                @(context.IsPaid ? "Pago" : "Não pago")
+                @(context.IsPaid
+                ? (Type == TransactionType.Income ? "Recebido" : "Pago")
+                : "Pendente")
             </MudChip>
         </MudTd>
         <MudTd DataLabel="Valor" Class="text-end">

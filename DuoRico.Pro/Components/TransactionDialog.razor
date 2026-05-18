@@ -55,7 +55,9 @@
                 </MudItem>
 
                 <MudItem xs="12" Class="d-flex align-center">
-                    <MudCheckBox @bind-Value="Model.IsPaid" Label="Pago?" Color="Color.Default" />
+                    <MudCheckBox @bind-Value="Model.IsPaid" 
+                    Label="@(Model.Type == Models.TransactionType.Income ? "Recebido" : "Pago")" 
+                    Color="Color.Default" />
                 </MudItem>
             </MudGrid>
         </MudForm>

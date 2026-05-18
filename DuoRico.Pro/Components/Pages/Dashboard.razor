@@ -71,13 +71,13 @@
             </MudCard>
         </MudItem>
     </MudGrid>
-    
+
     @* REGRA DOS 10% NO CARTÃO DE CRÉDITO *@
-    <CreditCardHealthWidget TotalIncome="_summary.TotalIncome" Transactions="_monthlyTransactions"/>
+    <CreditCardHealthWidget TotalIncome="_summary.TotalIncome" Transactions="_monthlyTransactions" />
 
     @* LISTA DE ÚLTIMAS DESPESAS *@
     <MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Class="mb-4">Últimas Despesas de @MonthName</MudText>
-    
+
     <MudCard Elevation="2" Class="rounded-lg">
         @if (_isLoading)
         {
@@ -107,12 +107,14 @@
                                     }
                                     else
                                     {
-                                        <MudChip Size="Size.Small" Color="Color.Error" Variant="Variant.Filled" Class="mr-0 text-white" Style="font-size: 0.70rem; font-weight: 600;">Não pago</MudChip>
+                                        <MudChip Size="Size.Small" Color="Color.Dark" Variant="Variant.Filled" Class="mr-0 text-white" Style="font-size: 0.70rem; font-weight: 600;">
+                                            Pendente
+                                        </MudChip>
                                     }
                                     <MudText Typo="Typo.caption" Color="Color.Secondary">@despesa.Category</MudText>
                                 </div>
                             </div>
-                            
+
                             <MudChip Size="Size.Small" Color="Color.Transparent" Variant="Variant.Filled" Style="font-weight: 700; font-size: 0.85rem;">
                                 @despesa.Amount.ToString("C", CultureInfo.GetCultureInfo("pt-BR"))
                             </MudChip>
@@ -127,7 +129,7 @@
 @code {
     private int _selectedMonth = DateTime.Now.Month;
     private int _selectedYear = DateTime.Now.Year;
-    
+
     private Guid _currentCoupleId = Guid.Empty;
     private bool _isLoading = true;
 
@@ -135,7 +137,7 @@
 
     // Lista Real de Despesas
     private List<TransactionDto> _latestExpenses = new();
-    
+
     // Regra dos 10% no cartão de crédito
     private List<TransactionDto> _monthlyTransactions = new();
 
@@ -180,7 +182,7 @@
                 .OrderByDescending(t => t.CreatedAt)
                 .Take(3)
                 .ToList();
-            
+
             // Busca os dados da regra dos 10% no cartão de créidito
             _monthlyTransactions = await TransactionService.GetCoupleTransactionsForPeriodAsync(_currentCoupleId, _selectedMonth, _selectedYear);
         }
