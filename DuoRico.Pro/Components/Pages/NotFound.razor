@@ -1,5 +1,58 @@
 ﻿@page "/not-found"
-@layout MainLayout
+@* Se quiser que a página de erro ocupe a tela toda sem menu, troque o MainLayout por um layout vazio.
+   Se quiser manter o menu lateral, deixe o MainLayout. *@
+@layout AuthLayout
 
-<h3>Não encontrado</h3>
-<p>Desculpe, o conteúdo que você está procurando não existe.</p>
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Página não encontrada - Duo Rico Pro</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="d-flex flex-column align-center justify-center" Style="min-height: 70vh;">
+
+    @* Ícone de "Ops" *@
+    <MudIcon Icon="@Icons.Material.Filled.SentimentDissatisfied" Color="Color.Primary" Style="font-size: 120px;" />
+
+    @* O clássico 404 *@
+    <MudText Typo="Typo.h1" Color="Color.Primary" Style="font-weight: 800; font-size: 6rem;" Class="mt-4">
+        404
+    </MudText>
+
+    @* Mensagem amigável *@
+    <MudText Typo="Typo.h5" Color="Color.Dark" Style="font-weight: 700;" Class="mt-2 text-center">
+        Ops! Parece que você se perdeu.
+    </MudText>
+
+    <MudText Typo="Typo.body1" Color="Color.Default" Class="mt-4 text-center" Style="max-width: 500px;">
+        A página que você está procurando não existe, foi removida, teve seu nome alterado ou está temporariamente indisponível.
+    </MudText>
+
+    @* Botão de resgate *@
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               Size="Size.Large"
+               StartIcon="@Icons.Material.Filled.Home"
+               Class="mt-8 px-6 py-3"
+               Style="font-weight: 600; border-radius: 8px;"
+               OnClick="GoHome">
+        Voltar para o Início
+    </MudButton>
+
+</MudContainer>
+
+@code {
+    private async Task GoHome()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+        
+        if (isAuthenticated)
+        {
+            NavigationManager.NavigateTo("/", forceLoad: true);
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/Account/Login", forceLoad: true);
+        }
+    }
+}

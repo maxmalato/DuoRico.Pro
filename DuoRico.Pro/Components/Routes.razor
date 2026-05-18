@@ -1,11 +1,14 @@
-﻿@using DuoRico.Pro.Components.Account.Shared
-<Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+﻿<Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
-        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
-            <NotAuthorized>
-                <RedirectToLogin />
-            </NotAuthorized>
-        </AuthorizeRouteView>
+        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
+    <NotFound>
+        <PageTitle>Não encontrado</PageTitle>
+        @* Informamos o layout vazio aqui também! *@
+        <LayoutView Layout="typeof(Layout.AuthLayout)">
+            @* Substitua o texto antigo pela chamada do seu componente *@
+            <DuoRico.Pro.Components.Pages.NotFound />
+        </LayoutView>
+    </NotFound>
 </Router>
