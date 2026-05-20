@@ -51,4 +51,11 @@ public class TransactionRepository(ApplicationDbContext context) : ITransactionR
 
         return (income, expense);
     }
+
+    public async Task<List<Transaction>> GetByInstallmentGroupIdAsync(Guid groupId, Guid coupleId)
+    {
+        return await context.Transactions
+            .Where(t => t.InstallmentGroupId == groupId && t.User!.CoupleId == coupleId)
+            .ToListAsync();
+    }
 }

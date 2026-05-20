@@ -29,7 +29,7 @@ public class Transaction
 
     public bool IsPaid { get; private set; }
 
-    public int TotalInstallments { get; private set; }
+    public int TotalInstallments { get; set; }
     public int InstallmentNumber { get; private set; }
     public Guid? InstallmentGroupId { get; private set; }
 

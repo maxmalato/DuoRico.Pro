@@ -104,4 +104,48 @@ public class TransactionService(ITransactionRepository repository) : ITransactio
 
         return true;
     }
+
+
+    public async Task<bool> DeleteInstallmentsFromAsync(Guid transactionId, Guid coupleId)
+    {
+        var existing = await repository.GetByIdAsync(transactionId, coupleId);
+
+        if (existing == null) return false;
+
+        if (existing.InstallmentGroupId == null)
+        {
+            await repository.DeleteAsync(existing);
+
+            return true;
+        }
+
+        var allGroupInstallments = await repository.GetByInstallmentGroupIdAsync(existing.InstallmentGroupId.Value, coupleId);
+
+        var installmentsToDelete = allGroupInstallments
+            .Where(t => t.InstallmentNumber >= existing.InstallmentNumber)
+            .ToList();
+
+        foreach (var installment in installmentsToDelete)
+        {
+            await repository.DeleteAsync(installment);
+        }
+
+        var newTotalInstallments = existing.InstallmentNumber - 1;
+
+        if (newTotalInstallments > 0)
+        {
+            var installmentsToKeep = allGroupInstallments
+                .Where(t => t.InstallmentNumber < existing.InstallmentNumber)
+                .ToList();
+
+            foreach (var installment in installmentsToKeep)
+            {
+                installment.TotalInstallments = newTotalInstallments;
+
+                await repository.UpdateAsync(installment);
+            }
+        }
+
+        return true;
+    }
 }

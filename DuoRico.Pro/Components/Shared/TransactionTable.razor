@@ -93,7 +93,17 @@
         <MudTd DataLabel="Ações" Style="text-align: center">
             <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true">
                 <MudMenuItem OnClick="@(() => OpenEditTransactionDialog(context))">Editar</MudMenuItem>
-                <MudMenuItem OnClick="@(() => DeleteTransaction(context))" Style="color: var(--mud-palette-error);">Excluir</MudMenuItem>
+
+                @if (context.TotalInstallments > 1)
+                {
+                    <MudMenuItem OnClick="@(() => DeleteTransaction(context, false))" Style="color: var(--mud-palette-error);">Excluir</MudMenuItem>
+                    <MudMenuItem OnClick="@(() => DeleteTransaction(context, true))" Style="color: var(--mud-palette-error);">Excluir esta e as próximas</MudMenuItem>
+
+                }
+                else
+                {
+                    <MudMenuItem OnClick="@(() => DeleteTransaction(context, false))" Style="color: var(--mud-palette-error);">Excluir</MudMenuItem>
+                }
             </MudMenu>
         </MudTd>
     </RowTemplate>
@@ -262,11 +272,36 @@
         }
     }
 
-    private async Task DeleteTransaction(TransactionDto t)
+    private async Task DeleteTransaction(TransactionDto t, bool deleteInstallments = false)
     {
-        if ((await DialogService.ShowMessageBoxAsync("Excluir", $"Deseja excluir {t.Description}?", "Sim", "Não")) == true)
+        string message = deleteInstallments
+            ? $"Tem certeza que deseja excluir a parcela {t.InstallmentNumber}/{t.TotalInstallments} e todas as seguintes de '{t.Description}'?"
+            : $"Tem certeza que deseja excluir {(t.TotalInstallments > 1 ? "apenas esta parcela de" : "a transação")} '{t.Description}'?";
+
+        bool? result = await DialogService.ShowMessageBoxAsync("Confirmar Exclusão", message, yesText: "Sim, excluir", cancelText: "Cancelar");
+
+        if (result == true)
         {
-            if (await TransactionService.DeleteTransactionAsync(t.Id, _currentCoupleId)) await LoadDataAsync();
+            bool success;
+
+            if (deleteInstallments)
+            {
+                success = await TransactionService.DeleteInstallmentsFromAsync(t.Id, _currentCoupleId);
+            }
+            else
+            {
+                success = await TransactionService.DeleteTransactionAsync(t.Id, _currentCoupleId);
+            }
+
+            if (success)
+            {
+                Snackbar.Add("Exclusão realizada com sucesso!", Severity.Success);
+                await LoadDataAsync();
+            }
+            else
+            {
+                Snackbar.Add("Erro ao excluir. Tente novamente.", Severity.Error);
+            }
         }
     }
 }
