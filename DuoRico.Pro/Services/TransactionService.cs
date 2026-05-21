@@ -50,7 +50,7 @@ public class TransactionService(ITransactionRepository repository) : ITransactio
 
             var transaction = new Transaction(
                    description: createTransactionDto.Description,
-                   amount: createTransactionDto.Amount / totalInstallments,
+                   amount: createTransactionDto.Amount,
                    category: createTransactionDto.Category,
                    type: createTransactionDto.Type,
                    month: currentMonth,

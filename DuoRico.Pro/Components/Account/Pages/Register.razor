@@ -1,4 +1,4 @@
-﻿@page "/Account/Register"
+﻿@page "/register"
 @layout DuoRico.Pro.Components.Layout.AuthLayout
 
 @using System.ComponentModel.DataAnnotations
@@ -66,7 +66,7 @@
                 <div class="d-flex justify-center mt-4 text-center" id="actionLinks">
                     <MudText Typo="Typo.body2">
                         Já tem uma conta?
-                        <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Login", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))" style="color: var(--mud-palette-primary); font-weight: 600; text-decoration: none;">
+                        <a href="@(NavigationManager.GetUriWithQueryParameters("/login", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))" style="color: var(--mud-palette-primary); font-weight: 600; text-decoration: none;">
                             Entre aqui
                         </a>
                     </MudText>
@@ -116,7 +116,7 @@
 
         await UserManager.ConfirmEmailAsync(user, code);
 
-        RedirectManager.RedirectTo("Account/Login");
+        RedirectManager.RedirectTo("/login");
     }
 
     private ApplicationUser CreateUser()

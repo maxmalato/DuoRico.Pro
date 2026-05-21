@@ -48,11 +48,11 @@
         
         if (isAuthenticated)
         {
-            NavigationManager.NavigateTo("/", forceLoad: true);
+            NavigationManager.NavigateTo("/dashboard", forceLoad: true);
         }
         else
         {
-            NavigationManager.NavigateTo("/Account/Login", forceLoad: true);
+            NavigationManager.NavigateTo("/login", forceLoad: true);
         }
     }
 }

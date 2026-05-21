@@ -8,7 +8,7 @@
 @inject UserManager<ApplicationUser> UserManager
 
 <MudNavMenu Rounded="true" Margin="Margin.Dense" Class="pa-2">
-    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home" IconColor="Color.Inherit">
+    <MudNavLink Href="/dashboard" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home" IconColor="Color.Inherit">
         <MudText Typo="Typo.subtitle1" Class="fw-bold">
             Início
         </MudText>
@@ -46,10 +46,10 @@
         </Authorized>
 
         <NotAuthorized>
-            <MudNavLink Href="Account/Register" Icon="@Icons.Material.Filled.PersonAdd">
+            <MudNavLink Href="/register" Icon="@Icons.Material.Filled.PersonAdd">
                 Registrar
             </MudNavLink>
-            <MudNavLink Href="Account/Login" Icon="@Icons.Material.Filled.Login">
+            <MudNavLink Href="/login" Icon="@Icons.Material.Filled.Login">
                 Entrar
             </MudNavLink>
         </NotAuthorized>

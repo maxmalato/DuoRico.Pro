@@ -1,4 +1,6 @@
-﻿@page "/Account/Login"
+﻿@page "/"
+@page "/login"
+
 @layout DuoRico.Pro.Components.Layout.AuthLayout
 
 @using System.ComponentModel.DataAnnotations
@@ -61,7 +63,7 @@
                 <div class="d-flex flex-column align-center mt-4 gap-2 text-center" id="actionLinks">
                     <MudText Typo="Typo.body2">
                         É novo aqui?
-                        <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))" style="color: var(--mud-palette-primary); font-weight: 600; text-decoration: none;">
+                        <a href="@(NavigationManager.GetUriWithQueryParameters("/register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))" style="color: var(--mud-palette-primary); font-weight: 600; text-decoration: none;">
                             Crie sua conta
                         </a>
                     </MudText>
@@ -122,6 +124,12 @@
         if (result.Succeeded)
         {
             Logger.LogInformation("Usuário entrou no sistema.");
+
+            if(string.IsNullOrWhiteSpace(ReturnUrl) || ReturnUrl == "/")
+            {
+                ReturnUrl = "/dashboard";
+            }
+
             RedirectManager.RedirectTo(ReturnUrl);
         }
         else if (result.RequiresTwoFactor)
