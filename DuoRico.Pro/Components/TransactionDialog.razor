@@ -88,8 +88,8 @@
     protected override void OnInitialized()
     {
         Model.Type = Type;
-        if (Model.Month == 0) Model.Month = DateTime.Now.Month;
-        if (Model.Year == 0) Model.Year = DateTime.Now.Year;
+        if (Model.Month == 0) Model.Month = DateTime.Now.AddMonths(1).Month;
+        if (Model.Year == 0) Model.Year = DateTime.Now.AddMonths(1).Year;
         if (Model.InstallmentNumber == 0) Model.InstallmentNumber = 1;
     }
 

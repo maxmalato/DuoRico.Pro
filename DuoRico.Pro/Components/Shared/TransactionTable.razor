@@ -115,8 +115,8 @@
     [Parameter] public string PageTitle { get; set; } = "";
     [Parameter] public string Icon { get; set; } = "";
 
-    private int _selectedMonth = DateTime.Now.Month;
-    private int _selectedYear = DateTime.Now.Year;
+    private int _selectedMonth = DateTime.Now.AddMonths(1).Month;
+    private int _selectedYear = DateTime.Now.AddMonths(1).Year;
     private string _currentUserId = "";
     private Guid _currentCoupleId = Guid.Empty;
     private bool _isLoading = true;

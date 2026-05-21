@@ -5,7 +5,7 @@
 
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider
-@inject UserManager<ApplicationUser> UserManager
+@inject IServiceProvider ServiceProvider
 
 <MudNavMenu Rounded="true" Margin="Margin.Dense" Class="pa-2">
     <MudNavLink Href="/dashboard" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home" IconColor="Color.Inherit">
@@ -31,11 +31,11 @@
     <AuthorizeView>
         <Authorized>
             <MudNavLink Href="Account/Manage" Icon="@Icons.Material.Filled.Person">
-                <MudText>@context.User.Identity?.Name</MudText>
+                <MudText>@(string.IsNullOrWhiteSpace(_firstName) ? context.User.Identity?.Name : _firstName)</MudText>
             </MudNavLink>
             <form action="Account/Logout" method="post">
                 <AntiforgeryToken />
-                    
+
                 <input type="hidden" name="ReturnUrl" value="@currentUrl" />
 
                 <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Text" Color="Color.Error" Class="w-100 justify-start px-4 py-3" Style="text-transform: none; padding-left: 54px !important;">
@@ -58,11 +58,33 @@
 
 @code {
     private string? currentUrl;
-    
-    protected override void OnInitialized()
+    private string? _firstName = "";
+
+    protected override async Task OnInitializedAsync()
     {
         currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
         NavigationManager.LocationChanged += OnLocationChanged;
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+            var appUser = await userManager.GetUserAsync(user);
+
+            if (appUser != null)
+            {
+                var fullName = appUser.Name;
+
+                if (!string.IsNullOrEmpty(fullName))
+                {
+                    _firstName = fullName.Split(' ')[0];
+                }
+            }
+        }
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)

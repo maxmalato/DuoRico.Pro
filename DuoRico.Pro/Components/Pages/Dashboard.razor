@@ -126,8 +126,8 @@
 </MudContainer>
 
 @code {
-    private int _selectedMonth = DateTime.Now.Month;
-    private int _selectedYear = DateTime.Now.Year;
+    private int _selectedMonth = DateTime.Now.AddMonths(1).Month;
+    private int _selectedYear = DateTime.Now.AddMonths(1).Year;
 
     private Guid _currentCoupleId = Guid.Empty;
     private bool _isLoading = true;
