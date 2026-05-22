@@ -46,13 +46,13 @@ public class Transaction
     protected Transaction() { }
 
     public Transaction(
-        string description, 
-        decimal amount, 
+        string description,
+        decimal amount,
         string category,
-        TransactionType type, 
-        int month, 
+        TransactionType type,
+        int month,
         int year,
-        int installmentNumber, 
+        int installmentNumber,
         int totalInstallments,
         bool isPaid,
         string userId,
@@ -60,7 +60,7 @@ public class Transaction
         )
     {
         // Validações de domínio
-        if(string.IsNullOrWhiteSpace(description))
+        if (string.IsNullOrWhiteSpace(description))
             throw new ArgumentException("Descrição não pode ser vazia.", nameof(description));
         if (amount <= 0)
             throw new ArgumentException("O valor deve ser maior que zero.");
@@ -80,7 +80,7 @@ public class Transaction
         UserId = userId;
         CreatedAt = DateTime.UtcNow;
 
-        if(TotalInstallments > 1)
+        if (TotalInstallments > 1)
         {
             InstallmentGroupId = installmentGroupId ?? Guid.NewGuid();
         }
@@ -92,7 +92,7 @@ public class Transaction
             throw new ArgumentException("Descrição não pode ser vazia.", nameof(description));
         if (amount <= 0)
             throw new ArgumentException("O valor deve ser maior que zero.");
-        
+
         Description = description;
         Amount = amount;
         Category = category;
@@ -102,5 +102,12 @@ public class Transaction
     public void TogglePaidStatus()
     {
         IsPaid = !IsPaid;
+    }
+
+    public void TransferOwnership(string newUserId)
+    {
+        if (string.IsNullOrWhiteSpace(newUserId))
+            throw new ArgumentException("User ID não pode ser vazio.", nameof(newUserId));
+        UserId = newUserId;
     }
 }

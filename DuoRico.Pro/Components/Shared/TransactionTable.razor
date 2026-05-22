@@ -10,10 +10,12 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 
-<div class="d-flex justify-space-between align-center mb-8">
+<div class="d-flex flex-column flex-sm-row justify-space-between align-start align-sm-center mb-8 gap-4">
     <div class="d-flex align-center gap-2">
-        <MudIcon Icon="@Icon" Color="@ThemeColor" Size="Size.Large" />
-        <MudText Typo="Typo.h4" Color="@ThemeColor" Style="font-weight: 700;">@PageTitle de @DateHelpers.GetMonthName(_selectedMonth)</MudText>
+        <MudIcon Icon="@(Type == TransactionType.Income ? Icons.Material.Filled.ArrowUpward : Icons.Material.Filled.ArrowDownward)"
+                 Color="@ThemeColor"
+                 Size="Size.Large" />
+        <MudText Typo="Typo.h4" Style="font-weight: 600; color: slategray">@PageTitle de @DateHelpers.GetMonthName(_selectedMonth)</MudText>
     </div>
 
     <PeriodSelector @bind-Month="_selectedMonth"
@@ -22,14 +24,14 @@
                     OnFilterChanged="LoadDataAsync" />
 </div>
 
-<div class="d-flex justify-space-between align-center mb-6 gap-4">
+<div class="d-flex flex-column flex-sm-row justify-space-between align-stretch align-sm-center mb-6 gap-4">
     <MudButton Variant="Variant.Filled"
                Color="@ThemeColor"
                StartIcon="@Icons.Material.Filled.AddCircleOutline"
                Style="font-weight: 600; text-transform: none; border-radius: 4px;"
                Class="px-4 py-2"
                OnClick="@(() => OpenNewTransactionDialog())">
-        Novo(a) @PageTitle
+        Nova @(Type == TransactionType.Income ? "Receita" : "Despesa")
     </MudButton>
 
     <MudTextField @bind-Value="_searchString"
@@ -39,32 +41,33 @@
                   IconSize="Size.Medium"
                   Variant="Variant.Outlined"
                   Margin="Margin.Dense"
-                  Style="width: 400px; background-color: white;" />
+                  Style="max-width: 400px; width: 100%; background-color: white;" />
 </div>
 
 @* CARDS DE RESUMO *@
-<div class="d-flex gap-3 mb-6">
-    <div class="d-flex align-center rounded pa-2" style="border: 1px solid var(--mud-palette-@ThemeColor.ToString().ToLower()); background-color: white;">
+<div class="d-flex flex-column flex-sm-row gap-3 mb-6 w-100">
+    <div class="d-flex align-center flex-grow-1 rounded pa-3" style="border: 1px solid var(--mud-palette-@ThemeColor.ToString().ToLower()); background-color: white;">
         <MudText Typo="Typo.body2" Color="@ThemeColor" Class="mr-1">Total:</MudText>
         <MudText Typo="Typo.body2" Color="@ThemeColor" Style="font-weight: 700;">@_totalAmount.ToString("C", _culture)</MudText>
     </div>
-    <div class="d-flex align-center rounded pa-2" style="border: 1px solid var(--mud-palette-@ThemeColor.ToString().ToLower()); background-color: white;">
+    <div class="d-flex align-center flex-grow-1 rounded pa-3" style="border: 1px solid var(--mud-palette-@ThemeColor.ToString().ToLower()); background-color: white;">
         <MudChip T="string" Size="Size.Small" Color="@Color.Success" Variant="Variant.Filled" Class="mr-2 ma-0" Style="font-weight: 600; font-size: 0.70rem;">
             @(Type == TransactionType.Income ? "Recebido" : "Pago")
         </MudChip>
         <MudText Typo="Typo.body2" Color="@ThemeColor" Style="font-weight: 700;">@_totalPaid.ToString("C", _culture)</MudText>
     </div>
-    <div class="d-flex align-center rounded pa-2" style="border: 1px solid var(--mud-palette-@ThemeColor.ToString().ToLower()); background-color: white;">
+    <div class="d-flex align-center flex-grow-1 rounded pa-3" style="border: 1px solid var(--mud-palette-@ThemeColor.ToString().ToLower()); background-color: white;">
         <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Class="mr-2 ma-0 text-white" Style="background-color: #6c757d; font-weight: 600; font-size: 0.70rem;">Pendente</MudChip>
         <MudText Typo="Typo.body2" Color="@ThemeColor" Style="font-weight: 700;">@_totalUnpaid.ToString("C", _culture)</MudText>
     </div>
 </div>
 
-<MudTable Items="@_transactions" Dense="false" Hover="true" Filter="FilterFunc" Loading="@_isLoading" Elevation="0" Class="bg-transparent">
+@* Adicionado Breakpoint.Sm para a tabela virar cards no celular *@
+<MudTable Items="@_transactions" Breakpoint="Breakpoint.Sm" Dense="false" Hover="true" Filter="FilterFunc" Loading="@_isLoading" Elevation="0" Class="bg-transparent">
     <HeaderContent>
         <MudTh Style="font-weight: 700; color: #333;">Descrição</MudTh>
         <MudTh Style="font-weight: 700; color: #333;">Categoria</MudTh>
-        <MudTh Style="font-weight: 700; color: #333;">Status</MudTh>
+        <MudTh Style="font-weight: 700; color: #333;">Estado</MudTh>
         <MudTh Style="font-weight: 700; color: #333;" Class="text-end">Valor</MudTh>
         <MudTh Style="font-weight: 700; color: #333;" Class="text-center">Ações</MudTh>
     </HeaderContent>
@@ -199,7 +202,8 @@
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
 
         // Abre o Modal com o título dinâmico (Ex: "Nova Despesa")
-        var dialog = await DialogService.ShowAsync<TransactionDialog>($"Nova {PageTitle}", parameters, options);
+        string modalTitle = $"Nova {(Type == TransactionType.Income ? "Receita" : "Despesa")}";
+        var dialog = await DialogService.ShowAsync<TransactionDialog>(modalTitle, parameters, options);
         var result = await dialog.Result;
 
         // 2. Se o usuário preencheu e clicou em Salvar
@@ -215,7 +219,7 @@
 
                 if (success)
                 {
-                    Snackbar.Add($"{PageTitle} criada com sucesso!", Severity.Success);
+                    Snackbar.Add($"Transação criada com sucesso!", Severity.Success);
 
                     // Recarrega a tabela com a nova transação
                     await LoadDataAsync();
@@ -248,7 +252,8 @@
         };
 
         var parameters = new DialogParameters { ["Model"] = updateModel };
-        var dialog = await DialogService.ShowAsync<EditTransactionDialog>("Editar Transação", parameters, options);
+        var modalTitle = $"Editar {(t.Type == TransactionType.Income ? "Receita" : "Despesa")}";
+        var dialog = await DialogService.ShowAsync<EditTransactionDialog>(modalTitle, parameters, options);
         var result = await dialog.Result;
 
         if (!result!.Canceled && result.Data != null)
@@ -259,7 +264,7 @@
 
             if (success)
             {
-                Snackbar.Add("Transação atualizada com sucesso!", Severity.Success);
+                Snackbar.Add($"Transação atualizada com sucesso!", Severity.Success);
 
                 await LoadDataAsync();
 

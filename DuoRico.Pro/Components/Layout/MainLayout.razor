@@ -1,4 +1,5 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
 
 <MudThemeProvider Theme="@_defaultTheme" />
 <MudDialogProvider />
@@ -7,7 +8,16 @@
 
 <MudLayout>
     <MudAppBar Elevation="1" Color="Color.Primary">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@(DrawerToggle)" />
+        <MudIconButton>
+            @if (NavigationManager.Uri.Contains("/Account/Manage", StringComparison.OrdinalIgnoreCase))
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Color="Color.Inherit" Edge="Edge.Start" Href="/dashboard" />
+            }
+            else
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@(DrawerToggle)" />
+            }
+        </MudIconButton>
         <MudText Typo="Typo.h6" Class="ml-3" Style="font-weight: 700;">
             DUO RICO PRO
         </MudText>
@@ -40,6 +50,6 @@
     {
         _drawerOpen = !_drawerOpen;
     }
-    
+
     private readonly MudTheme _defaultTheme = new();
 }

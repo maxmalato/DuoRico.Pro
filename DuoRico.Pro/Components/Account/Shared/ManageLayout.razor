@@ -1,17 +1,26 @@
 ﻿@inherits LayoutComponentBase
 @layout DuoRico.Pro.Components.Layout.MainLayout
 
-<h1>Gerenciar sua conta</h1>
-
-<div>
-    <h2>Alterar suas configurações de conta</h2>
-    <hr />
-    <div class="row">
-        <div class="col-lg-3">
-            <ManageNavMenu />
-        </div>
-        <div class="col-lg-9">
-            @Body
-        </div>
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6 mb-8">
+    <div class="d-flex gap-2">
+        <MudIcon Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Primary" Size="Size.Large" Class="mb-2" />
+        <MudText Typo="Typo.h4" Style="font-weight: 700; color: slategray" Class="mb-2">Gerenciar sua conta</MudText>
     </div>
-</div>
+    <MudText Typo="Typo.body1" Class="mb-6">Altere suas configurações de perfil e segurança</MudText>
+
+    <MudDivider Class="mb-6" />
+
+    <MudGrid>
+        @* Menu Lateral Responsivo *@
+        <MudItem xs="12" md="3">
+            <ManageNavMenu />
+        </MudItem>
+
+        @* Área de Conteúdo Central *@
+        <MudItem xs="12" md="9">
+            <MudPaper Elevation="2" Class="pa-6 pa-sm-8 rounded-lg" Style="border: 1px solid var(--mud-palette-lines-default);">
+                @Body
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>

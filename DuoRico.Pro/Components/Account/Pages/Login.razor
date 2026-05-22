@@ -23,22 +23,25 @@
             DUO RICO <span style="font-weight: 300;">PRO</span>
         </MudText>
 
+        <MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Default" Class="mb-6">
+            Bem-vindo! Acesse seu painel financeiro.
+        </MudText>
+
         <StatusMessage Message="@errorMessage" />
 
         <EditForm EditContext="editContext" method="post" OnSubmit="LoginUser" FormName="login">
             <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger mb-4" role="alert" />
 
             <div class="d-flex flex-column gap-4">
                 
                 <div class="form-floating">
-                    <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username webauthn" aria-required="true" placeholder="nome@exemplo.com" />
+                    <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username webauthn" aria-required="true" placeholder="Digite seu e-mail" />
                     <label for="Input.Email">E-mail</label>
                     <ValidationMessage For="() => Input.Email" class="text-danger mt-1 d-block" style="font-size: 0.85rem;" />
                 </div>
 
                 <div class="form-floating">
-                    <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="Senha" />
+                    <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="Digite sua senha" />
                     <label for="Input.Password">Senha</label>
                     <ValidationMessage For="() => Input.Password" class="text-danger mt-1 d-block" style="font-size: 0.85rem;" />
                 </div>
@@ -47,7 +50,7 @@
                     <div class="form-check">
                         <InputCheckbox @bind-Value="Input.RememberMe" id="Input.RememberMe" class="form-check-input" style="cursor: pointer;" />
                         <label class="form-check-label" for="Input.RememberMe" style="cursor: pointer; font-size: 0.9rem; justify-self: center">
-                            Lembrar-me
+                            Lembrar meu acesso
                         </label>
                     </div>
                     

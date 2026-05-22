@@ -3,30 +3,36 @@
 
 @inject SignInManager<ApplicationUser> SignInManager
 
-<ul class="nav nav-pills flex-column">
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage" Match="NavLinkMatch.All">Perfil</NavLink>
-    </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/Email">E-mail</NavLink>
-    </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/ChangePassword">Senha</NavLink>
-    </li>
+<MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Primary" Class="pa-2">
+
+    <MudNavLink Href="Account/Manage" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Person">
+        <MudText Typo="Typo.subtitle2" Style="font-weight: 600;">Perfil</MudText>
+    </MudNavLink>
+
+    <MudNavLink Href="Account/Manage/Email" Icon="@Icons.Material.Filled.Email">
+        <MudText Typo="Typo.subtitle2" Style="font-weight: 600;">E-mail</MudText>
+    </MudNavLink>
+
+    <MudNavLink Href="Account/Manage/ChangePassword" Icon="@Icons.Material.Filled.Lock">
+        <MudText Typo="Typo.subtitle2" Style="font-weight: 600;">Senha</MudText>
+    </MudNavLink>
+
     @if (hasExternalLogins)
     {
-        <li class="nav-item">
-            <NavLink class="nav-link" href="Account/Manage/ExternalLogins">Logins externos</NavLink>
-        </li>
+        <MudNavLink Href="Account/Manage/ExternalLogins" Icon="@Icons.Material.Filled.Link">
+            <MudText Typo="Typo.subtitle2" Style="font-weight: 600;">Logins externos</MudText>
+        </MudNavLink>
     }
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/TwoFactorAuthentication">Autenticação de dois fatores</NavLink>
-    </li>
-   
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/PersonalData">Dados pessoais</NavLink>
-    </li>
-</ul>
+
+    <MudNavLink Href="Account/Manage/TwoFactorAuthentication" Icon="@Icons.Material.Filled.Security">
+        <MudText Typo="Typo.subtitle2" Style="font-weight: 600;">Autenticação de dois fatores</MudText>
+    </MudNavLink>
+
+    <MudNavLink Href="Account/Manage/PersonalData" Icon="@Icons.Material.Filled.PrivacyTip">
+        <MudText Typo="Typo.subtitle2" Style="font-weight: 600;">Dados pessoais</MudText>
+    </MudNavLink>
+
+</MudNavMenu>
 
 @code {
     private bool hasExternalLogins;

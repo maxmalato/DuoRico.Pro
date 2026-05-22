@@ -2,40 +2,58 @@
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.Extensions.DependencyInjection
 @using DuoRico.Pro.Data
 
 @inject UserManager<ApplicationUser> UserManager
 @inject SignInManager<ApplicationUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<DeletePersonalData> Logger
+@inject IServiceProvider ServiceProvider
 
-<PageTitle>Delete Personal Data</PageTitle>
+<PageTitle>Excluir Conta - Duo Rico Pro</PageTitle>
+
+<MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Class="mb-6">Excluir Conta</MudText>
 
 <StatusMessage Message="@message" />
 
-<h3>Delete Personal Data</h3>
+<MudGrid>
+    <MudItem xs="12" sm="10" md="8">
+        <MudAlert Severity="Severity.Error" Class="mb-6" Elevation="1">
+            <MudText Typo="Typo.subtitle2" Style="font-weight: 700;" Class="mb-1">Atenção: Ação irreversível.</MudText>
+            <MudText Typo="Typo.body2">
+                A exclusão destes dados removerá permanentemente a sua conta e as suas informações não poderão ser recuperadas.
+            </MudText>
+        </MudAlert>
 
-<div class="alert alert-warning" role="alert">
-    <p>
-        <strong>Deleting this data will permanently remove your account, and this cannot be recovered.</strong>
-    </p>
-</div>
+        <EditForm Model="Input" FormName="delete-user" OnValidSubmit="OnValidSubmitAsync" method="post">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger mb-4" role="alert" />
 
-<div>
-    <EditForm Model="Input" FormName="delete-user" OnValidSubmit="OnValidSubmitAsync" method="post">
-        <DataAnnotationsValidator />
-        <ValidationSummary class="text-danger" role="alert" />
-        @if (requirePassword)
-        {
-            <div class="form-floating mb-3">
-                <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="Please enter your password." />
-                <label for="Input.Password" class="form-label">Password</label>
-                <ValidationMessage For="() => Input.Password" class="text-danger" />
-            </div>
-        }
-        <button class="w-100 btn btn-lg btn-danger" type="submit">Delete data and close my account</button>
-    </EditForm>
-</div>
+            @if (requirePassword)
+            {
+                <MudTextField @bind-Value="Input.Password"
+                              For="@(() => Input.Password)"
+                              Name="Input.Password"
+                              Label="Digite sua senha para confirmar"
+                              InputType="InputType.Password"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Class="mb-6" />
+            }
+
+            <MudButton ButtonType="ButtonType.Submit"
+                       Variant="Variant.Filled"
+                       Color="Color.Error"
+                       Size="Size.Large"
+                       Class="w-100 py-2"
+                       Style="font-weight: bold; border-radius: 4px;">
+                Excluir dados e fechar minha conta
+            </MudButton>
+        </EditForm>
+    </MudItem>
+</MudGrid>
 
 @code {
     private string? message;
@@ -45,7 +63,7 @@
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
-    [SupplyParameterFromForm]
+    [SupplyParameterFromForm(FormName = "delete-user")]
     private InputModel Input { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
@@ -71,26 +89,69 @@
 
         if (requirePassword && !await UserManager.CheckPasswordAsync(user, Input.Password))
         {
-            message = "Error: Incorrect password.";
+            message = "Erro: Senha incorreta.";
             return;
         }
 
+        if (user.CoupleId.HasValue && user.CoupleId.Value != Guid.Empty)
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var coupleId = user.CoupleId.Value;
+
+            // Busca se existe outro usuário que faz parte do mesmo casal (o parceiro)
+            var remainingPartner = await UserManager.Users
+                .FirstOrDefaultAsync(u => u.CoupleId == coupleId && u.Id != user.Id);
+
+            if (remainingPartner == null)
+            {
+                // CENÁRIO 1: É a última pessoa. Apaga todas as transações do casal limpidamente.
+                var transactionsToDelete = await dbContext.Transactions
+                    .Where(t => t.User!.CoupleId == coupleId)
+                    .ToListAsync();
+
+                if (transactionsToDelete.Any())
+                {
+                    dbContext.Transactions.RemoveRange(transactionsToDelete);
+                    await dbContext.SaveChangesAsync();
+                }
+            }
+            else
+            {
+                // CENÁRIO 2: Tem parceiro!
+                // Transfere a autoria das transações usando o método seguro que criamos.
+                var transactionsToTransfer = await dbContext.Transactions
+                    .Where(t => t.UserId == user.Id)
+                    .ToListAsync();
+
+                foreach (var t in transactionsToTransfer)
+                {
+                    t.TransferOwnership(remainingPartner.Id);
+                }
+
+                await dbContext.SaveChangesAsync();
+            }
+        }
+      
+        // Executa a exclusão oficial do usuário no Identity
         var result = await UserManager.DeleteAsync(user);
         if (!result.Succeeded)
         {
-            throw new InvalidOperationException("Unexpected error occurred deleting user.");
+            throw new InvalidOperationException("Ocorreu um erro inesperado ao excluir o usuário.");
         }
 
         await SignInManager.SignOutAsync();
 
         var userId = await UserManager.GetUserIdAsync(user);
-        Logger.LogInformation("User with ID '{UserId}' deleted themselves.", userId);
+        Logger.LogInformation("O usuário com ID '{UserId}' excluiu sua própria conta.", userId);
 
-        RedirectManager.RedirectToCurrentPage();
+        // Redireciona para a tela inicial de Login após a exclusão
+        RedirectManager.RedirectTo("/");
     }
 
     private sealed class InputModel
     {
+        [Required(ErrorMessage = "A senha é obrigatória.")]
         [DataType(DataType.Password)]
         public string Password { get; set; } = "";
     }

@@ -8,39 +8,44 @@
 @inject IServiceProvider ServiceProvider
 
 <MudNavMenu Rounded="true" Margin="Margin.Dense" Class="pa-2">
-    <MudNavLink Href="/dashboard" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home" IconColor="Color.Inherit">
-        <MudText Typo="Typo.subtitle1" Class="fw-bold">
-            Início
+    <MudNavLink Href="/dashboard" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home" IconColor="Color.Primary">
+        <MudText Typo="Typo.subtitle1" Class="fw-semibold" Color="Color.Dark">
+            Dashboard
         </MudText>
     </MudNavLink>
 
     <MudDivider DividerType="DividerType.Middle" />
 
     <MudNavLink Href="/incomes" Icon="@Icons.Material.Filled.ArrowUpward" IconColor="Color.Success">
-        <MudText Typo="Typo.subtitle1" Color="Color.Success">
+        <MudText Typo="Typo.subtitle1" Color="Color.Dark">
             Receitas
         </MudText>
     </MudNavLink>
 
     <MudNavLink Href="/expenses" Icon="@Icons.Material.Filled.ArrowDownward" IconColor="Color.Error">
-        <MudText Typo="Typo.subtitle1" Color="Color.Error">
+        <MudText Typo="Typo.subtitle1" Color="Color.Dark">
             Despesas
         </MudText>
     </MudNavLink>
 
     <AuthorizeView>
         <Authorized>
-            <MudNavLink Href="Account/Manage" Icon="@Icons.Material.Filled.Person">
-                <MudText>@(string.IsNullOrWhiteSpace(_firstName) ? context.User.Identity?.Name : _firstName)</MudText>
+            <MudNavLink Href="Account/Manage" Icon="@Icons.Material.Filled.AccountCircle">
+                <MudText>@(string.IsNullOrWhiteSpace(_name) ? context.User.Identity?.Name : _name)</MudText>
             </MudNavLink>
-            <form action="Account/Logout" method="post">
+            <form action="Account/Logout" method="post" class="w-100">
                 <AntiforgeryToken />
 
                 <input type="hidden" name="ReturnUrl" value="@currentUrl" />
 
-                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Text" Color="Color.Error" Class="w-100 justify-start px-4 py-3" Style="text-transform: none; padding-left: 54px !important;">
-                    <MudIcon Icon="@Icons.Material.Filled.Logout" Class="mr-4" />
-                    <MudText Typo="Typo.body2" Style="font-weight: 700;">Sair</MudText>
+                <MudButton ButtonType="ButtonType.Submit"
+                           Variant="Variant.Text"
+                           Color="Color.Error"
+                           FullWidth="true"
+                           StartIcon="@Icons.Material.Filled.Logout"
+                           Class="justify-start px-6 py-2"
+                           Style="text-transform: none;">
+                    <MudText Typo="Typo.subtitle1">Sair</MudText>
                 </MudButton>
             </form>
         </Authorized>
@@ -58,7 +63,7 @@
 
 @code {
     private string? currentUrl;
-    private string? _firstName = "";
+    private string? _name = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -81,7 +86,17 @@
 
                 if (!string.IsNullOrEmpty(fullName))
                 {
-                    _firstName = fullName.Split(' ')[0];
+                    var nameParts = fullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+                    if (nameParts.Length == 1)
+                    {
+                        _name = nameParts[0];
+
+                    }
+                    else if (nameParts.Length > 1)
+                    {
+                        _name = $"{nameParts[0]} {nameParts[^1]}";
+                    }
                 }
             }
         }

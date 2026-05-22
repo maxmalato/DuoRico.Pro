@@ -25,7 +25,7 @@
             DUO RICO <span style="font-weight: 300;">PRO</span>
         </MudText>
         <MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Default" Class="mb-6">
-            Crie sua conta e transforme a gestão financeira do seu casal.
+            Crie sua conta e melhore a gestão financeira do seu casal.
         </MudText>
 
         <StatusMessage Message="@Message" />
@@ -36,26 +36,26 @@
             <div class="d-flex flex-column gap-4">
                 
                 <div class="form-floating">
-                    <InputText @bind-Value="Input.Name" id="Input.Name" class="form-control" autocomplete="name" aria-required="true" placeholder="Seu nome completo" />
+                    <InputText @bind-Value="Input.Name" id="Input.Name" class="form-control" autocomplete="name" aria-required="true" placeholder="Digite seu nome" />
                     <label for="Input.Name">Nome completo</label>
                     <ValidationMessage For="() => Input.Name" class="text-danger mt-1 d-block" style="font-size: 0.85rem;" />
                 </div>
 
                 <div class="form-floating">
-                    <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="seuemail@exemplo.com" />
+                    <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="Digite seu e-mail" />
                     <label for="Input.Email">E-mail</label>
                     <ValidationMessage For="() => Input.Email" class="text-danger mt-1 d-block" style="font-size: 0.85rem;" />
                 </div>
 
                 <div class="form-floating">
-                    <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="Senha" />
+                    <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="Digite sua senha" />
                     <label for="Input.Password">Senha</label>
                     <ValidationMessage For="() => Input.Password" class="text-danger mt-1 d-block" style="font-size: 0.85rem;" />
                 </div>
 
                 <div class="form-floating">
-                    <InputText type="password" @bind-Value="Input.ConfirmPassword" id="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="Confirme a senha" />
-                    <label for="Input.ConfirmPassword">Confirme a senha</label>
+                    <InputText type="password" @bind-Value="Input.ConfirmPassword" id="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="Confirme sua senha" />
+                    <label for="Input.ConfirmPassword">Confirmar senha</label>
                     <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger mt-1 d-block" style="font-size: 0.85rem;" />
                 </div>
 
