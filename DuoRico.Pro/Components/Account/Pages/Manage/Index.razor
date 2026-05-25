@@ -2,11 +2,13 @@
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
 @using DuoRico.Pro.Data
 
 @inject UserManager<ApplicationUser> UserManager
 @inject SignInManager<ApplicationUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
+@inject IServiceProvider ServiceProvider
 
 <PageTitle>Perfil - Duo Rico Pro</PageTitle>
 
@@ -21,7 +23,7 @@
     <MudGrid>
         <MudItem xs="12" sm="10" md="8">
 
-            @* Nome de Usuário / E-mail (Desabilitado) *@
+            @* E-mail (Desabilitado) *@
             <MudTextField Value="@username"
                           Label="E-mail"
                           Variant="Variant.Outlined"
@@ -29,17 +31,28 @@
                           Disabled="true"
                           Class="mb-4" />
 
-            @* Novo Campo: Nome *@
+            @* Nome *@
             <MudTextField @bind-Value="Input.Name"
                           For="@(() => Input.Name)"
+                          Name="Input.Name"
                           Label="Nome Completo"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="mb-4" />
 
-            @* Campo: Telefone *@
+            @* ID do casal *@
+            <MudTextField @bind-Value="Input.CoupleId"
+                          For="@(() => Input.CoupleId)"
+                          Name="Input.CoupleId"
+                          Label="ID do Casal (Copie o ID do seu parceiro para vincular)"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="mb-4" />
+
+            @* Telefone *@
             <MudTextField @bind-Value="Input.PhoneNumber"
                           For="@(() => Input.PhoneNumber)"
+                          Name="Input.PhoneNumber"
                           Label="Telefone"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
@@ -62,12 +75,13 @@
     private ApplicationUser? user;
     private string? username;
     private string? phoneNumber;
-    private string? name; // Variável para armazenar o nome atual
+    private string? name;
+    private Guid? coupleId;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
-    [SupplyParameterFromForm]
+    [SupplyParameterFromForm(FormName = "profile")]
     private InputModel Input { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
@@ -83,12 +97,12 @@
 
         username = await UserManager.GetUserNameAsync(user);
         phoneNumber = await UserManager.GetPhoneNumberAsync(user);
-
-        // Pega o nome atual do banco de dados
+        coupleId = user.CoupleId;
         name = user.Name;
 
         Input.PhoneNumber ??= phoneNumber;
-        Input.Name ??= name; // Preenche o Input com o nome do banco
+        Input.Name ??= name;
+        Input.CoupleId ??= coupleId?.ToString();
     }
 
     private async Task OnValidSubmitAsync()
@@ -101,7 +115,7 @@
 
         bool hasChanges = false;
 
-        // Atualiza Telefone
+        // 1. Atualiza Telefone
         if (Input.PhoneNumber != phoneNumber)
         {
             var setPhoneResult = await UserManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
@@ -113,11 +127,11 @@
             hasChanges = true;
         }
 
-        // LÓGICA NOVA: Atualiza o Nome
+        // 2. Atualiza Nome
         if (Input.Name != name)
         {
-            user.Name = Input.Name; // Atualiza a propriedade do modelo
-            var updateResult = await UserManager.UpdateAsync(user); // Salva no banco de dados
+            user.Name = Input.Name;
+            var updateResult = await UserManager.UpdateAsync(user);
 
             if (!updateResult.Succeeded)
             {
@@ -127,6 +141,38 @@
             hasChanges = true;
         }
 
+        // 3. Atualiza ID do Casal
+        if (Input.CoupleId != coupleId?.ToString())
+        {
+            if (!string.IsNullOrWhiteSpace(Input.CoupleId) && Guid.TryParse(Input.CoupleId, out Guid newCoupleId))
+            {
+                var partnerExists = await UserManager.Users.AnyAsync(u => u.CoupleId == newCoupleId && u.Id != user.Id);
+
+                if (!partnerExists)
+                {
+                    RedirectManager.RedirectToCurrentPageWithStatus("Erro: Nenhum parceiro encontrado com este ID.", HttpContext);
+                    return;
+                }
+
+                user.CoupleId = newCoupleId;
+                var updateResult = await UserManager.UpdateAsync(user);
+
+                if (!updateResult.Succeeded)
+                {
+                    RedirectManager.RedirectToCurrentPageWithStatus("Erro: Falha ao vincular o ID do casal.", HttpContext);
+                    return;
+                }
+
+                hasChanges = true;
+            }
+            else
+            {
+                RedirectManager.RedirectToCurrentPageWithStatus("Erro: O formato do ID do casal é inválido.", HttpContext);
+                return;
+            }
+        }
+
+        // 4. Finalização
         if (hasChanges)
         {
             await SignInManager.RefreshSignInAsync(user);
@@ -134,7 +180,6 @@
         }
         else
         {
-            // Opcional: Avisa se ele clicou em salvar sem alterar nada
             RedirectManager.RedirectToCurrentPageWithStatus("Nenhuma alteração foi feita.", HttpContext);
         }
     }
@@ -148,5 +193,8 @@
         [Required(ErrorMessage = "O nome é obrigatório.")]
         [Display(Name = "Nome")]
         public string? Name { get; set; }
+
+        [Display(Name = "ID do Casal")]
+        public string? CoupleId { get; set; }
     }
 }
