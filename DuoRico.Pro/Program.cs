@@ -49,7 +49,10 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/Account/AccessDenied";
 });
 
-builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+// Envio de e-mails usando o CustomEmailSender
+builder.Services.AddTransient<IEmailSender<ApplicationUser>, CustomEmailSender>();
+
+// builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
 builder.Services.AddMudServices();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
