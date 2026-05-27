@@ -14,7 +14,7 @@
 
 <PageTitle>E-mail - Duo Rico Pro</PageTitle>
 
-<MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Class="mb-6">Meu E-mail</MudText>
+<MudText Typo="Typo.h5" Style="font-weight: 700;" Class="mb-6">Meu E-mail</MudText>
 
 <StatusMessage Message="@message" />
 
@@ -39,7 +39,8 @@
                               Adornment="Adornment.End"
                               AdornmentIcon="@Icons.Material.Filled.CheckCircle"
                               AdornmentColor="Color.Success"
-                              Class="mb-4" />
+                              Class="mb-4"
+                              Placeholder="Seu e-mail atual"/>
             }
             else
             {
@@ -66,7 +67,9 @@
                           Label="Novo E-mail"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
-                          Class="mb-6" />
+                          Class="mb-6"
+                          Placeholder="Seu novo e-mail"
+                          Name="Input.NewEmail"/>
 
             <MudButton ButtonType="ButtonType.Submit"
                        Variant="Variant.Filled"

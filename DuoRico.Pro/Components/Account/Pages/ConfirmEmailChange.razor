@@ -5,18 +5,42 @@
 @using Microsoft.AspNetCore.WebUtilities
 @using DuoRico.Pro.Data
 
+@layout DuoRico.Pro.Components.Layout.AuthLayout
+
 @inject UserManager<ApplicationUser> UserManager
 @inject SignInManager<ApplicationUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Confirm email change</PageTitle>
+<PageTitle>Confirmação de E-mail - Duo Rico Pro</PageTitle>
 
-<h1>Confirm email change</h1>
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8 mb-8">
+    <MudPaper Elevation="3" Class="pa-8 rounded-lg text-center" Style="border: 1px solid var(--mud-palette-lines-default);">
 
-<StatusMessage Message="@message" />
+        @if (isError)
+        {
+            <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Color="Color.Error" Size="Size.Large" Class="mb-4" Style="width: 64px; height: 64px;" />
+            <MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Class="mb-2">Ops! Algo deu errado</MudText>
+        }
+        else if (!string.IsNullOrEmpty(message))
+        {
+            <MudIcon Icon="@Icons.Material.Filled.MarkEmailRead" Color="Color.Success" Size="Size.Large" Class="mb-4" Style="width: 64px; height: 64px;" />
+            <MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Class="mb-2">E-mail Atualizado!</MudText>
+        }
+
+        <MudText Typo="Typo.body1" Class="mb-6">
+            @message
+        </MudText>
+
+        <MudButton Href="/login" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Size="Size.Large" Style="font-weight: bold;">
+            Ir para o Login
+        </MudButton>
+
+    </MudPaper>
+</MudContainer>
 
 @code {
     private string? message;
+    private bool isError;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -35,35 +59,39 @@
         if (UserId is null || Email is null || Code is null)
         {
             RedirectManager.RedirectToWithStatus(
-                "/login", "Error: Invalid email change confirmation link.", HttpContext);
+                "/login", "Erro: Link de confirmação de alteração de e-mail inválido.", HttpContext);
             return;
         }
 
         var user = await UserManager.FindByIdAsync(UserId);
         if (user is null)
         {
-            message = "Unable to find user with Id '{userId}'";
+            message = $"Não foi possível encontrar o usuário.";
+            isError = true;
             return;
         }
 
         var code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(Code));
         var result = await UserManager.ChangeEmailAsync(user, Email, code);
+
         if (!result.Succeeded)
         {
-            message = "Error changing email.";
+            message = "Ocorreu um erro ao tentar alterar o seu e-mail. O link pode ter expirado.";
+            isError = true;
             return;
         }
 
-        // In our UI email and user name are one and the same, so when we update the email
-        // we need to update the user name.
+        // O e-mail e o nome de usuário (login) são a mesma coisa.
+        // Então, quando atualiza o e-mail, precisa atualizar o UserName também.
         var setUserNameResult = await UserManager.SetUserNameAsync(user, Email);
         if (!setUserNameResult.Succeeded)
         {
-            message = "Error changing user name.";
+            message = "Erro ao sincronizar o novo e-mail com o seu login de acesso.";
+            isError = true;
             return;
         }
 
         await SignInManager.RefreshSignInAsync(user);
-        message = "Thank you for confirming your email change.";
+        message = "Obrigado por confirmar! Seu e-mail de acesso foi alterado com sucesso.";
     }
 }
