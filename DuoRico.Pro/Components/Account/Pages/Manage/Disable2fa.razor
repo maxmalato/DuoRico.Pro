@@ -7,27 +7,32 @@
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<Disable2fa> Logger
 
-<PageTitle>Disable two-factor authentication (2FA)</PageTitle>
+<PageTitle>Desativar 2FA - Duo Rico Pro</PageTitle>
+
+<MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Class="mb-6">Desativar Autenticação em Duas Etapas (2FA)</MudText>
 
 <StatusMessage />
-<h3>Disable two-factor authentication (2FA)</h3>
 
-<div class="alert alert-warning" role="alert">
-    <p>
-        <strong>This action only disables 2FA.</strong>
-    </p>
-    <p>
-        Disabling 2FA does not change the keys used in authenticator apps. If you wish to change the key
-        used in an authenticator app you should <a href="Account/Manage/ResetAuthenticator">reset your authenticator keys.</a>
-    </p>
-</div>
+<MudAlert Severity="Severity.Warning" Class="mb-6" Elevation="1">
+    <MudText Typo="Typo.subtitle2" Style="font-weight: 700;" Class="mb-1">
+        Esta ação apenas desativa a verificação 2FA.
+    </MudText>
+    <MudText Typo="Typo.body2">
+        Desativar o 2FA não apaga a chave que já está salva no seu aplicativo autenticador no celular. Se você deseja invalidar a chave antiga, você deve <MudLink Href="Account/Manage/ResetAuthenticator" Color="Color.Inherit" Underline="Underline.Always">redefinir a chave do autenticador</MudLink>.
+    </MudText>
+</MudAlert>
 
-<div>
-    <form @formname="disable-2fa" @onsubmit="OnSubmitAsync" method="post">
-        <AntiforgeryToken />
-        <button class="btn btn-danger" type="submit">Disable 2FA</button>
-    </form>
-</div>
+<form @formname="disable-2fa" @onsubmit="OnSubmitAsync" method="post">
+    <AntiforgeryToken />
+    <MudButton ButtonType="ButtonType.Submit"
+               Variant="Variant.Filled"
+               Color="Color.Error"
+               Size="Size.Large"
+               StartIcon="@Icons.Material.Filled.GppBad"
+               Style="font-weight: bold; border-radius: 4px;">
+        Desativar 2FA
+    </MudButton>
+</form>
 
 @code {
     private ApplicationUser? user;
@@ -46,7 +51,7 @@
 
         if (HttpMethods.IsGet(HttpContext.Request.Method) && !await UserManager.GetTwoFactorEnabledAsync(user))
         {
-            throw new InvalidOperationException("Cannot disable 2FA for user as it's not currently enabled.");
+            throw new InvalidOperationException("Não é possível desativar o 2FA pois ele não está habilitado no momento.");
         }
     }
 
@@ -61,14 +66,15 @@
         var disable2faResult = await UserManager.SetTwoFactorEnabledAsync(user, false);
         if (!disable2faResult.Succeeded)
         {
-            throw new InvalidOperationException("Unexpected error occurred disabling 2FA.");
+            throw new InvalidOperationException("Ocorreu um erro inesperado ao tentar desativar o 2FA.");
         }
 
         var userId = await UserManager.GetUserIdAsync(user);
-        Logger.LogInformation("User with ID '{UserId}' has disabled 2fa.", userId);
+        Logger.LogInformation("O usuário '{UserId}' desativou o 2FA.", userId);
+
         RedirectManager.RedirectToWithStatus(
-            "Account/Manage/TwoFactorAuthentication",
-            "2fa has been disabled. You can reenable 2fa when you setup an authenticator app",
-            HttpContext);
+                    "Account/Manage/TwoFactorAuthentication",
+                    "A autenticação em duas etapas (2FA) foi desativada. Você pode reativá-la configurando um aplicativo autenticador novamente.",
+                    HttpContext);
     }
 }

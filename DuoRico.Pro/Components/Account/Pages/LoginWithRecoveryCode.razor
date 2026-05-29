@@ -4,40 +4,67 @@
 @using Microsoft.AspNetCore.Identity
 @using DuoRico.Pro.Data
 
+@layout DuoRico.Pro.Components.Layout.AuthLayout
+
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<LoginWithRecoveryCode> Logger
 
-<PageTitle>Recovery code verification</PageTitle>
+<PageTitle>Recuperação de Conta - Duo Rico Pro</PageTitle>
 
-<h1>Recovery code verification</h1>
-<hr />
-<StatusMessage Message="@message" />
-<p>
-    You have requested to log in with a recovery code. This login will not be remembered until you provide
-    an authenticator app code at log in or disable 2FA and log in again.
-</p>
-<div class="row">
-    <div class="col-md-4">
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8 mb-8">
+    <MudPaper Elevation="3" Class="pa-8 rounded-lg" Style="border: 1px solid var(--mud-palette-lines-default);">
+
+        <div class="d-flex flex-column align-center mb-6">
+            <MudIcon Icon="@Icons.Material.Filled.VpnKey" Color="Color.Primary" Size="Size.Large" Class="mb-3" Style="width: 64px; height: 64px;" />
+            <MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Align="Align.Center">Código de Recuperação</MudText>
+            <MudText Typo="Typo.body2" Align="Align.Center" Class="mt-2">
+                Você solicitou login via código de emergência. Este dispositivo não será lembrado até que você faça login com o aplicativo autenticador novamente.
+            </MudText>
+        </div>
+
+        <StatusMessage Message="@message" />
+
         <EditForm Model="Input" FormName="login-with-recovery-code" OnValidSubmit="OnValidSubmitAsync" method="post">
             <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert" />
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.RecoveryCode" id="Input.RecoveryCode" class="form-control" autocomplete="off" placeholder="RecoveryCode" />
-                <label for="Input.RecoveryCode" class="form-label">Recovery Code</label>
-                <ValidationMessage For="() => Input.RecoveryCode" class="text-danger" />
-            </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
+            <ValidationSummary class="text-danger mb-4" role="alert" />
+
+            <MudTextField @bind-Value="Input.RecoveryCode"
+                          For="@(() => Input.RecoveryCode)"
+                          Name="Input.RecoveryCode"
+                          Label="Código de Recuperação"
+                          Placeholder="Ex: 1a2b-3c4d"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="mb-6" />
+
+            <MudButton ButtonType="ButtonType.Submit"
+                       Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Size="Size.Large"
+                       Class="w-100 py-2"
+                       Style="font-weight: bold; border-radius: 4px;">
+                Entrar com Código
+            </MudButton>
+
+            <MudButton Href="/"
+                       Variant="Variant.Outlined"
+                       Color="Color.Dark"
+                       Size="Size.Large"
+                       Class="w-100 py-2 mt-4"
+                       Style="font-weight: bold; border-radius: 4px">
+                Voltar para o login
+            </MudButton>
         </EditForm>
-    </div>
-</div>
+    </MudPaper>
+</MudContainer>
 
 @code {
     private string? message;
     private ApplicationUser user = default!;
 
-    [SupplyParameterFromForm]
+    [SupplyParameterFromForm(FormName = "login-with-recovery-code")]
     private InputModel Input { get; set; } = default!;
 
     [SupplyParameterFromQuery]
@@ -47,9 +74,9 @@
     {
         Input ??= new();
 
-        // Ensure the user has gone through the username & password screen first
+        // Garante que o usuário passou pela tela de e-mail/senha primeiro
         user = await SignInManager.GetTwoFactorAuthenticationUserAsync() ??
-            throw new InvalidOperationException("Unable to load two-factor authentication user.");
+            throw new InvalidOperationException("Não foi possível carregar o usuário de autenticação de dois fatores.");
     }
 
     private async Task OnValidSubmitAsync()
@@ -62,26 +89,26 @@
 
         if (result.Succeeded)
         {
-            Logger.LogInformation("User with ID '{UserId}' logged in with a recovery code.", userId);
+            Logger.LogInformation("Usuário '{UserId}' fez login com código de recuperação.", userId);
             RedirectManager.RedirectTo(ReturnUrl);
         }
         else if (result.IsLockedOut)
         {
-            Logger.LogWarning("User account locked out.");
+            Logger.LogWarning("Conta do usuário foi bloqueada.");
             RedirectManager.RedirectTo("Account/Lockout");
         }
         else
         {
-            Logger.LogWarning("Invalid recovery code entered for user with ID '{UserId}' ", userId);
-            message = "Error: Invalid recovery code entered.";
+            Logger.LogWarning("Código de recuperação inválido para o usuário '{UserId}'.", userId);
+            message = "Erro: Código de recuperação inválido.";
         }
     }
 
     private sealed class InputModel
     {
-        [Required]
+        [Required(ErrorMessage = "O código de recuperação é obrigatório.")]
         [DataType(DataType.Text)]
-        [Display(Name = "Recovery Code")]
+        [Display(Name = "Código")]
         public string RecoveryCode { get; set; } = "";
     }
 }

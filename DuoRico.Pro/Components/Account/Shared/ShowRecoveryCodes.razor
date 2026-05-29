@@ -1,22 +1,38 @@
-﻿<StatusMessage Message="@StatusMessage" />
-<h3>Recovery codes</h3>
-<div class="alert alert-warning" role="alert">
-    <p>
-        <strong>Put these codes in a safe place.</strong>
-    </p>
-    <p>
-        If you lose your device and don't have the recovery codes you will lose access to your account.
-    </p>
-</div>
-<div class="row">
-    <div class="col-md-12">
+﻿@using MudBlazor
+
+<StatusMessage Message="@StatusMessage" />
+
+<MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Class="mb-4">Códigos de Recuperação</MudText>
+
+<MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-6" Elevation="2">
+    <div class="d-flex flex-column">
+        <MudText Typo="Typo.subtitle1" Style="font-weight: 700;">Guarde estes códigos em um local seguro!</MudText>
+        <MudText Typo="Typo.body2">
+            Se você perder seu celular e não tiver estes códigos, você <strong>perderá o acesso à sua conta permanentemente</strong>.
+        </MudText>
+    </div>
+</MudAlert>
+
+<MudPaper Elevation="0" Class="pa-6 rounded-lg mb-6" Style="background-color: var(--mud-palette-background-grey); border: 2px dashed var(--mud-palette-divider);">
+    <MudGrid Spacing="2">
         @foreach (var recoveryCode in RecoveryCodes)
         {
-            <div>
-                <code class="recovery-code">@recoveryCode</code>
-            </div>
+            <MudItem xs="12" sm="6" Class="d-flex justify-center">
+                <div style="font-family: 'Roboto Mono', monospace; font-size: 1.1rem; letter-spacing: 1px; color: var(--mud-palette-primary); background: white; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--mud-palette-divider); width: 100%; text-align: center;">
+                    <strong>@recoveryCode</strong>
+                </div>
+            </MudItem>
         }
-    </div>
+    </MudGrid>
+</MudPaper>
+
+<div class="d-flex flex-wrap gap-3">
+    <MudButton Href="Account/Manage/TwoFactorAuthentication"
+               Variant="Variant.Filled"
+               Color="Color.Primary"
+               Style="font-weight: 600;">
+        Concluído
+    </MudButton>
 </div>
 
 @code {

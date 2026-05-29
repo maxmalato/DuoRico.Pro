@@ -12,7 +12,7 @@
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<EnableAuthenticator> Logger
 
-<PageTitle>Configure authenticator app</PageTitle>
+<PageTitle>Configurar Autenticador - Duo Rico Pro</PageTitle>
 
 @if (recoveryCodes is not null)
 {
@@ -20,49 +20,70 @@
 }
 else
 {
+    <MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Class="mb-6">Configurar Autenticador (2FA)</MudText>
+
     <StatusMessage Message="@message" />
-    <h3>Configure authenticator app</h3>
-    <div>
-        <p>To use an authenticator app go through the following steps:</p>
-        <ol class="list">
-            <li>
-                <p>
-                    Download a two-factor authenticator app like Microsoft Authenticator for
-                    <a href="https://go.microsoft.com/fwlink/?Linkid=825072">Android</a> and
-                    <a href="https://go.microsoft.com/fwlink/?Linkid=825073">iOS</a> or
-                    Google Authenticator for
-                    <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2&amp;hl=en">Android</a> and
-                    <a href="https://itunes.apple.com/us/app/google-authenticator/id388497605?mt=8">iOS</a>.
-                </p>
-            </li>
-            <li>
-                <p>Scan the QR Code or enter this key <kbd>@sharedKey</kbd> into your two factor authenticator app. Spaces and casing do not matter.</p>
-                <div class="alert alert-info">Learn how to <a href="https://go.microsoft.com/fwlink/?Linkid=852423">enable QR code generation</a>.</div>
-                <div></div>
-                <div data-url="@authenticatorUri"></div>
-            </li>
-            <li>
-                <p>
-                    Once you have scanned the QR code or input the key above, your two factor authentication app will provide you
-                    with a unique code. Enter the code in the confirmation box below.
-                </p>
-                <div class="row">
-                    <div class="col-xl-6">
-                        <EditForm Model="Input" FormName="send-code" OnValidSubmit="OnValidSubmitAsync" method="post">
-                            <DataAnnotationsValidator />
-                            <div class="form-floating mb-3">
-                                <InputText @bind-Value="Input.Code" id="Input.Code" class="form-control" autocomplete="off" placeholder="Enter the code" />
-                                <label for="Input.Code" class="control-label form-label">Verification Code</label>
-                                <ValidationMessage For="() => Input.Code" class="text-danger" />
-                            </div>
-                            <button type="submit" class="w-100 btn btn-lg btn-primary">Verify</button>
-                            <ValidationSummary class="text-danger" role="alert" />
-                        </EditForm>
-                    </div>
+
+    <MudGrid>
+        <MudItem xs="12" md="8">
+            <MudPaper Elevation="1" Class="pa-6 rounded-lg mb-6">
+                <MudText Typo="Typo.h6" Style="font-weight: 700;" Class="mb-4">1. Configure o Aplicativo</MudText>
+                <MudText Typo="Typo.body2" Class="mb-4">
+                    Baixe um aplicativo autenticador na loja do seu dispositivo (como o Google Authenticator ou Authy).
+                </MudText>
+                <MudText Typo="Typo.body2" Class="mb-4">
+                    Abra o aplicativo e <strong>escaneie o QR Code</strong> abaixo:
+                </MudText>
+
+                <div class="d-flex justify-center mb-6">
+                    @if (!string.IsNullOrEmpty(authenticatorUri))
+                    {
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=@UrlEncoder.Encode(authenticatorUri)"
+                             alt="QR Code"
+                             style="border-radius: 8px; border: 1px solid var(--mud-palette-lines-default);" />
+                    }
                 </div>
-            </li>
-        </ol>
-    </div>
+
+                <MudText Typo="Typo.body2" Class="mb-2">
+                    Ou, se preferir, digite a seguinte chave manualmente:
+                </MudText>
+
+                <MudAlert Severity="Severity.Info" Elevation="0" Class="mb-4 text-center">
+                    <MudText Typo="Typo.h5" Style="font-weight: 700; letter-spacing: 2px;">@sharedKey</MudText>
+                </MudAlert>
+            </MudPaper>
+
+            <MudPaper Elevation="1" Class="pa-6 rounded-lg mb-6">
+                <MudText Typo="Typo.h6" Style="font-weight: 700;" Class="mb-4">2. Valide o Código</MudText>
+                <MudText Typo="Typo.body2" Class="mb-4">
+                    Após escanear o QR Code, seu aplicativo fornecerá um código de 6 dígitos. Digite esse código abaixo para confirmar.
+                </MudText>
+
+                <EditForm Model="Input" FormName="send-code" OnValidSubmit="OnValidSubmitAsync" method="post">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary class="text-danger mb-4" role="alert" />
+
+                    <MudTextField @bind-Value="Input.Code"
+                                  For="@(() => Input.Code)"
+                                  Name="Input.Code"
+                                  Label="Código de Verificação"
+                                  Placeholder="123456"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Class="mb-6" />
+
+                    <MudButton ButtonType="ButtonType.Submit"
+                               Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Large"
+                               Class="w-100 py-2"
+                               Style="font-weight: bold; border-radius: 4px;">
+                        Verificar e Ativar
+                    </MudButton>
+                </EditForm>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
 }
 
 @code {
@@ -77,7 +98,7 @@ else
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
-    [SupplyParameterFromForm]
+    [SupplyParameterFromForm(FormName = "send-code")]
     private InputModel Input { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
@@ -102,7 +123,6 @@ else
             return;
         }
 
-        // Strip spaces and hyphens
         var verificationCode = Input.Code.Replace(" ", string.Empty).Replace("-", string.Empty);
 
         var is2faTokenValid = await UserManager.VerifyTwoFactorTokenAsync(
@@ -110,15 +130,15 @@ else
 
         if (!is2faTokenValid)
         {
-            message = "Error: Verification code is invalid.";
+            message = "Erro: O código de verificação é inválido.";
             return;
         }
 
         await UserManager.SetTwoFactorEnabledAsync(user, true);
         var userId = await UserManager.GetUserIdAsync(user);
-        Logger.LogInformation("User with ID '{UserId}' has enabled 2FA with an authenticator app.", userId);
+        Logger.LogInformation("Usuário '{UserId}' ativou o 2FA.", userId);
 
-        message = "Your authenticator app has been verified.";
+        message = "Seu aplicativo autenticador foi ativado com sucesso.";
 
         if (await UserManager.CountRecoveryCodesAsync(user) == 0)
         {
@@ -132,7 +152,6 @@ else
 
     private async ValueTask LoadSharedKeyAndQrCodeUriAsync(ApplicationUser user)
     {
-        // Load the authenticator key & QR code URI to display on the form
         var unformattedKey = await UserManager.GetAuthenticatorKeyAsync(user);
         if (string.IsNullOrEmpty(unformattedKey))
         {
@@ -141,7 +160,6 @@ else
         }
 
         sharedKey = FormatKey(unformattedKey!);
-
         var email = await UserManager.GetEmailAsync(user);
         authenticatorUri = GenerateQrCodeUri(email!, unformattedKey!);
     }
@@ -168,17 +186,17 @@ else
         return string.Format(
             CultureInfo.InvariantCulture,
             AuthenticatorUriFormat,
-            UrlEncoder.Encode("Microsoft.AspNetCore.Identity.UI"),
+            UrlEncoder.Encode("Duo Rico Pro"),
             UrlEncoder.Encode(email),
             unformattedKey);
     }
 
     private sealed class InputModel
     {
-        [Required]
-        [StringLength(7, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [Required(ErrorMessage = "O código é obrigatório.")]
+        [StringLength(7, ErrorMessage = "O {0} deve ter pelo menos {2} e no máximo {1} caracteres.", MinimumLength = 6)]
         [DataType(DataType.Text)]
-        [Display(Name = "Verification Code")]
+        [Display(Name = "Código")]
         public string Code { get; set; } = "";
     }
 }
