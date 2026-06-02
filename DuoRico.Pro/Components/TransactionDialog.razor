@@ -6,7 +6,7 @@
 
 <MudDialog>
     <DialogContent>
-        <MudForm @ref="_form" , Model="@Model">
+        <MudForm @ref="_form" Model="@Model">
             <MudGrid>
                 <MudItem xs="12">
                     <MudTextField @bind-Value="Model.Description" Label="Descrição*" For="@(() => Model.Description)" Variant="Variant.Outlined" Margin="Margin.Dense" />
