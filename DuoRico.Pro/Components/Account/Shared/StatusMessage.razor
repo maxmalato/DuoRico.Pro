@@ -1,21 +1,58 @@
-﻿@if (!string.IsNullOrEmpty(DisplayMessage))
+@if (!string.IsNullOrEmpty(DisplayMessage))
 {
-    var statusMessageClass = DisplayMessage.StartsWith("Error") ? "danger" : "success";
-    <div class="alert alert-@statusMessageClass" role="alert">
+    <MudAlert Severity="@ResolvedSeverity"
+              Elevation="1"
+              Dense="true"
+              Class="mb-4"
+              role="alert">
         @DisplayMessage
-    </div>
+    </MudAlert>
 }
 
 @code {
+    // Prefixos tratados como erro. Cobre PT-BR e o padrão original em EN,
+    // pois mensagens vindas do cookie de redirecionamento carregam apenas texto.
+    private static readonly string[] ErrorPrefixes = { "Erro", "Error", "Falha" };
+
     private string? messageFromCookie;
 
     [Parameter]
     public string? Message { get; set; }
 
+    /// <summary>
+    /// Define explicitamente a severidade do alerta. Quando nulo, a severidade
+    /// é inferida a partir do prefixo da mensagem (ver <see cref="ErrorPrefixes"/>).
+    /// </summary>
+    [Parameter]
+    public MudBlazor.Severity? Severity { get; set; }
+
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
     private string? DisplayMessage => Message ?? messageFromCookie;
+
+    private MudBlazor.Severity ResolvedSeverity =>
+        Severity ?? (IsErrorMessage(DisplayMessage)
+            ? MudBlazor.Severity.Error
+            : MudBlazor.Severity.Success);
+
+    private static bool IsErrorMessage(string? message)
+    {
+        if (string.IsNullOrEmpty(message))
+        {
+            return false;
+        }
+
+        foreach (var prefix in ErrorPrefixes)
+        {
+            if (message.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     protected override void OnInitialized()
     {

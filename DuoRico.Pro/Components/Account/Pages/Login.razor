@@ -18,7 +18,7 @@
 
 <MudContainer MaxWidth="MaxWidth.Small">
     <MudCard Elevation="4" Class="pa-8 w-100 rounded-lg">
-        
+
         <MudText Typo="Typo.h4" Align="Align.Center" Color="Color.Primary" Style="font-weight: 700; letter-spacing: 1px;" Class="mb-6">
             DUO RICO <span style="font-weight: 300;">PRO</span>
         </MudText>
@@ -27,13 +27,13 @@
             Bem-vindo! Acesse seu painel financeiro.
         </MudText>
 
-        <StatusMessage Message="@errorMessage" />
+        <StatusMessage Message="@errorMessage" Severity="Severity.Error" />
 
         <EditForm EditContext="editContext" method="post" OnSubmit="LoginUser" FormName="login">
             <DataAnnotationsValidator />
 
             <div class="d-flex flex-column gap-4">
-                
+
                 <div class="form-floating">
                     <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username webauthn" aria-required="true" placeholder="Digite seu e-mail" />
                     <label for="Input.Email">E-mail</label>
@@ -126,7 +126,7 @@
         {
             Logger.LogInformation("Usuário entrou no sistema.");
 
-            if(string.IsNullOrWhiteSpace(ReturnUrl) || ReturnUrl == "/")
+            if (string.IsNullOrWhiteSpace(ReturnUrl) || ReturnUrl == "/")
             {
                 ReturnUrl = "/dashboard";
             }
