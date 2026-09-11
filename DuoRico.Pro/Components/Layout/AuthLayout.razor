@@ -1,6 +1,6 @@
 ﻿@inherits LayoutComponentBase
 
-<MudThemeProvider />
+<MudThemeProvider Theme="@AppTheme.Default" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -29,18 +29,3 @@
     });
 </script>
 
-@code {
-    private MudTheme DuoRicoTheme = new MudTheme()
-    {
-        PaletteLight = new PaletteLight()
-        {
-            Primary = "#D4AF37",
-            AppbarBackground = "#1E1E24",
-            Background = "#F4F6F8"
-        },
-        LayoutProperties = new LayoutProperties()
-        {
-            DefaultBorderRadius = "12px"
-        }
-    };
-}

@@ -1,7 +1,7 @@
 ﻿@inherits LayoutComponentBase
 @inject NavigationManager NavigationManager
 
-<MudThemeProvider Theme="@_defaultTheme" />
+<MudThemeProvider Theme="@AppTheme.Default" />
 <MudDialogProvider />
 <MudSnackbarProvider />
 <MudPopoverProvider />
@@ -50,6 +50,4 @@
     {
         _drawerOpen = !_drawerOpen;
     }
-
-    private readonly MudTheme _defaultTheme = new();
 }
