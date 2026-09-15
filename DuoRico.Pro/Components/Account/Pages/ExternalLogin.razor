@@ -166,7 +166,16 @@
                 var callbackUrl = NavigationManager.GetUriWithQueryParameters(
                     NavigationManager.ToAbsoluteUri("Account/ConfirmEmail").AbsoluteUri,
                     new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code });
-                await EmailSender.SendConfirmationLinkAsync(user, Input.Email, HtmlEncoder.Default.Encode(callbackUrl));
+                try
+                {
+                    await EmailSender.SendConfirmationLinkAsync(user, Input.Email, HtmlEncoder.Default.Encode(callbackUrl));
+                }
+                catch (Exception ex)
+                {
+                    // A conta já foi criada; abortar aqui a deixaria órfã.
+                    // O usuário pode reenviar a confirmação depois.
+                    Logger.LogError(ex, "Falha ao enviar o e-mail de confirmação para o usuário {UserId}.", userId);
+                }
 
                 // If account confirmation is required, we need to show the link if we don't have a real email sender
                 if (UserManager.Options.SignIn.RequireConfirmedAccount)

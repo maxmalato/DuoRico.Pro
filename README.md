@@ -13,6 +13,7 @@ Aplicação moderna desenvolvida com **Blazor (.NET 10)** para controle de recei
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-336791?style=for-the-badge&logo=postgresql)
 ![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?style=for-the-badge&logo=docker)
 ![Render](https://img.shields.io/badge/Deploy-Render-46E3B7?style=for-the-badge&logo=render)
+![Brevo](https://img.shields.io/badge/E--mail-Brevo%20API-0B996E?style=for-the-badge&logo=brevo)
 
 </div>
 
@@ -75,10 +76,10 @@ O projeto foi completamente reconstruído utilizando **Blazor (.NET 10)**, subst
 └──────────┬──────────┘
            │
            ▼
-┌─────────────────────┐
-│ ASP.NET Core (.NET) │
-│     Identity        │
-│   Entity Framework  │
+┌─────────────────────┐        ┌──────────────────────┐
+│ ASP.NET Core (.NET) │───────►│  Brevo API (HTTPS)   │
+│     Identity        │        │ e-mail transacional  │
+│   Entity Framework  │        └──────────────────────┘
 └──────────┬──────────┘
            │
            ▼
@@ -100,6 +101,7 @@ O projeto foi completamente reconstruído utilizando **Blazor (.NET 10)**, subst
 | PostgreSQL | Banco de Dados |
 | Neon | Banco Serverless |
 | ASP.NET Identity | Autenticação |
+| Brevo | E-mail Transacional (API HTTP) |
 | Docker | Containerização |
 | Render | Hospedagem |
 
@@ -112,10 +114,74 @@ A aplicação segue boas práticas para ambientes de produção:
 - Autenticação em Dois Fatores (2FA)
 - Proteção contra vazamento de credenciais
 - Uso de User Secrets em ambiente local
+- API key do provedor de e-mail fornecida por variável de ambiente, fora do controle de versão
+- Nenhuma credencial SMTP ou senha de aplicativo do Gmail armazenada na aplicação
 - Senhas criptografadas pelo ASP.NET Identity
 - Tokens seguros para redefinição de senha
 - Confirmação de e-mail
 - Controle de sessões autenticadas
+
+---
+
+# 📧 Envio de E-mails
+
+Os e-mails transacionais do Identity (confirmação de cadastro, redefinição de senha e troca de e-mail) são entregues pela **API HTTP do Brevo**.
+
+## Por que API HTTP e não SMTP
+
+O Render **bloqueia o tráfego de saída nas portas SMTP 25, 465 e 587** em web services do plano free desde 26/09/2025 ([changelog oficial](https://render.com/changelog/free-web-services-will-no-longer-allow-outbound-traffic-to-smtp-ports)). A porta 25 permanece bloqueada em qualquer plano.
+
+O sintoma é enganoso: a conexão não é recusada, ela pende até estourar o timeout e a requisição falha depois de cerca de 100 segundos — funcionando perfeitamente em ambiente local e falhando apenas em produção.
+
+A API do Brevo usa **HTTPS na porta 443**, que não sofre bloqueio.
+
+## Provedor
+
+Brevo no plano gratuito:
+
+- 300 e-mails por dia
+- Remetente único verificado por código de 6 dígitos
+- **Não exige domínio próprio** — importante, porque a aplicação roda em um subdomínio do Render
+
+## Configuração no painel do Brevo
+
+1. Criar a conta em [brevo.com](https://www.brevo.com) (plano Free, sem cartão)
+2. **Settings → Senders, Domains & Dedicated IPs → Senders → Add a sender**: cadastrar o remetente e confirmar o código de 6 dígitos enviado para ele
+3. **SMTP & API → API Keys → Generate a new API key**: gerar a chave, que tem o prefixo `xkeysib-`
+
+> Sem um remetente verificado a API responde **400**. As chaves v3 do Brevo valem para toda a conta (não têm escopo por permissão) — trate como credencial de alto valor e planeje a rotação.
+
+## Chaves de configuração
+
+Seção `EmailSettings`, definida em `DuoRico.Pro/Services/EmailSettings.cs`:
+
+| Chave | Obrigatória | Observação |
+|-------|-------------|------------|
+| `Provider` | Sim | `Brevo` (envia de verdade) ou `Log` (apenas escreve no console) |
+| `SenderName` | Sim | Já vem com o valor padrão `Duo Rico Pro` no `appsettings.json` |
+| `SenderEmail` | Somente se `Provider=Brevo` | Remetente verificado no painel do Brevo |
+| `BrevoApiKey` | Somente se `Provider=Brevo` | Prefixo `xkeysib-`. **Secret** |
+
+## Modo de desenvolvimento
+
+Com `Provider=Log`, a implementação `LoggingEmailSender` escreve o link de recuperação direto no console e **nenhum segredo é necessário**. É o modo recomendado para desenvolver o fluxo de autenticação sem consumir a cota diária.
+
+Com `Provider=Brevo`, o `BrevoEmailSender` envia de verdade.
+
+## Validação no startup
+
+A configuração é validada no boot com `ValidateOnStart()`. Se `Provider=Brevo` e a chave ou o remetente estiverem ausentes ou inválidos, **a aplicação não sobe** e o log aponta exatamente qual variável falta.
+
+Isso é intencional — é preferível falhar alto e de forma legível a servir erro 500 silencioso em runtime. A consequência prática é que, no Render, **as variáveis de ambiente precisam estar configuradas antes do deploy**.
+
+Arquivos de referência:
+
+```text
+DuoRico.Pro/Services/
+ ├─ EmailSettings.cs        (opções + validação)
+ ├─ BrevoEmailSender.cs     (envio via API HTTP)
+ └─ LoggingEmailSender.cs   (modo desenvolvimento)
+```
 
 ---
 
@@ -146,10 +212,23 @@ Dentro da pasta do projeto:
 ```bash
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Sua-Connection-String"
 
-dotnet user-secrets set "EmailSettings:Email" "seu-email@provedor.com"
-
-dotnet user-secrets set "EmailSettings:SenhaApp" "sua-senha-de-aplicativo"
+# Desenvolvimento: escreve o link no console, sem precisar de credencial
+dotnet user-secrets set "EmailSettings:Provider" "Log"
 ```
+
+Somente se quiser testar o envio real de e-mail localmente:
+
+```bash
+dotnet user-secrets set "EmailSettings:Provider" "Brevo"
+
+dotnet user-secrets set "EmailSettings:SenderEmail" "remetente-verificado@exemplo.com"
+
+dotnet user-secrets set "EmailSettings:BrevoApiKey" "xkeysib-..."
+```
+
+> O `appsettings.json` guarda apenas valores **não sensíveis** (`Provider` e `SenderName`). A API key nunca deve ser versionada, nem colocada no `Dockerfile` via `ENV`/`ARG` — camadas de imagem são inspecionáveis com `docker history`.
+
+Veja a seção [Envio de E-mails](#-envio-de-e-mails) para obter a chave e entender o toggle `Provider`.
 
 ### Rider
 
@@ -243,6 +322,20 @@ O projeto foi preparado para deploy em plataformas modernas de hospedagem:
 - Railway
 - Fly.io
 - VPS Linux com Docker
+
+## Variáveis de Ambiente
+
+Em produção a configuração vem do painel do provedor. O separador é o **duplo underscore** (`__`), equivalente ao `:` usado localmente:
+
+| Variável | Valor | Secret |
+|----------|-------|--------|
+| `ConnectionStrings__DefaultConnection` | String de conexão do PostgreSQL | **Sim** |
+| `EmailSettings__Provider` | `Brevo` | Não |
+| `EmailSettings__SenderName` | `Duo Rico Pro` | Não |
+| `EmailSettings__SenderEmail` | Remetente verificado no Brevo | Não |
+| `EmailSettings__BrevoApiKey` | `xkeysib-...` | **Sim** |
+
+> ⚠️ **Configure as variáveis antes de disparar o deploy.** A validação de startup impede a aplicação de subir se algo estiver ausente ou inválido, o que leva o serviço a um ciclo de reinício. Se isso acontecer, corrija a variável ou reverta o deploy pelo painel do provedor.
 
 ---
 

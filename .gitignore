@@ -43,3 +43,7 @@ $RECYCLE.BIN/
 *.log
 *.sqlite
 *.db
+
+# Configuração local/produção com segredos — nunca versionar
+appsettings.Production.json
+appsettings.*.Local.json

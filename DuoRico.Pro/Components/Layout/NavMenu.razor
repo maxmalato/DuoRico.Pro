@@ -8,28 +8,30 @@
 @inject IServiceProvider ServiceProvider
 
 <MudNavMenu Rounded="true" Margin="Margin.Dense" Class="pa-2">
-    <MudNavLink Href="/dashboard" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home" IconColor="Color.Primary">
-        <MudText Typo="Typo.subtitle1" Class="fw-semibold" Color="Color.Dark">
-            Dashboard
-        </MudText>
-    </MudNavLink>
-
-    <MudDivider DividerType="DividerType.Middle" />
-
-    <MudNavLink Href="/incomes" Icon="@Icons.Material.Filled.ArrowUpward" IconColor="Color.Success">
-        <MudText Typo="Typo.subtitle1" Color="Color.Dark">
-            Receitas
-        </MudText>
-    </MudNavLink>
-
-    <MudNavLink Href="/expenses" Icon="@Icons.Material.Filled.ArrowDownward" IconColor="Color.Error">
-        <MudText Typo="Typo.subtitle1" Color="Color.Dark">
-            Despesas
-        </MudText>
-    </MudNavLink>
-
     <AuthorizeView>
         <Authorized>
+            <MudNavLink Href="/dashboard" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home" IconColor="Color.Primary">
+                <MudText Typo="Typo.subtitle1" Class="fw-semibold" Color="Color.Dark">
+                    Dashboard
+                </MudText>
+            </MudNavLink>
+
+            <MudDivider DividerType="DividerType.Middle" />
+
+            <MudNavLink Href="/incomes" Icon="@Icons.Material.Filled.ArrowUpward" IconColor="Color.Success">
+                <MudText Typo="Typo.subtitle1" Color="Color.Dark">
+                    Receitas
+                </MudText>
+            </MudNavLink>
+
+            <MudNavLink Href="/expenses" Icon="@Icons.Material.Filled.ArrowDownward" IconColor="Color.Error">
+                <MudText Typo="Typo.subtitle1" Color="Color.Dark">
+                    Despesas
+                </MudText>
+            </MudNavLink>
+
+            <MudDivider DividerType="DividerType.Middle" Class="my-2" />
+
             <MudNavLink Href="Account/Manage" Icon="@Icons.Material.Filled.AccountCircle">
                 <MudText>@(string.IsNullOrWhiteSpace(_name) ? context.User.Identity?.Name : _name)</MudText>
             </MudNavLink>
