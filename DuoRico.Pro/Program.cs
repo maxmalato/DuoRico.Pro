@@ -4,12 +4,14 @@ using DuoRico.Pro.Data;
 using DuoRico.Pro.Interfaces;
 using DuoRico.Pro.Services;
 using DuoRico.Pro.Repositories;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using MudBlazor.Services;
+using System.Security.Cryptography.X509Certificates;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,6 +46,43 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddSignInManager()
     .AddDefaultTokenProviders();
+
+// O container do Render é efêmero: sem isto, o keyring do Data Protection (usado por
+// login por cookie, reset de senha e 2FA) some a cada redeploy/restart. Persistimos no
+// Postgres, que já existe, e criptografamos com um certificado para não ficar em texto
+// claro no banco. Só fora de Development: localmente o keyring padrão (em disco) é
+// suficiente, e exigir um certificado aqui quebraria "dotnet run"/"dotnet ef" sem setup
+// extra — mesmo raciocínio já aplicado a EmailSettings com Provider=Log.
+if (!builder.Environment.IsDevelopment())
+{
+    var dataProtectionSettings = builder.Configuration
+        .GetSection(DataProtectionSettings.SectionName)
+        .Get<DataProtectionSettings>()
+        ?? new DataProtectionSettings();
+
+    if (string.IsNullOrWhiteSpace(dataProtectionSettings.CertificateBase64))
+    {
+        throw new InvalidOperationException(
+            "DataProtection:CertificateBase64 não está configurado. Defina a variável de ambiente " +
+            "DataProtection__CertificateBase64.");
+    }
+
+    if (string.IsNullOrWhiteSpace(dataProtectionSettings.CertificatePassword))
+    {
+        throw new InvalidOperationException(
+            "DataProtection:CertificatePassword não está configurado. Defina a variável de ambiente " +
+            "DataProtection__CertificatePassword.");
+    }
+
+    var dataProtectionCertificate = X509CertificateLoader.LoadPkcs12(
+        Convert.FromBase64String(dataProtectionSettings.CertificateBase64),
+        dataProtectionSettings.CertificatePassword);
+
+    builder.Services.AddDataProtection()
+        .SetApplicationName("DuoRico.Pro")
+        .PersistKeysToDbContext<ApplicationDbContext>()
+        .ProtectKeysWithCertificate(dataProtectionCertificate);
+}
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -110,8 +149,11 @@ else
     app.UseHsts();
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-app.UseHttpsRedirection();
 
+// Sem UseHttpsRedirection: o TLS já termina no proxy do Render (container só expõe HTTP
+// internamente) e o ForwardedHeadersOptions acima já faz o app enxergar https. Manter o
+// middleware faria o health check interno do Render (sem X-Forwarded-Proto) receber um
+// redirect em vez de 200 OK.
 app.UseAntiforgery();
 
 app.MapStaticAssets();

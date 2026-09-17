@@ -334,8 +334,25 @@ Em produção a configuração vem do painel do provedor. O separador é o **dup
 | `EmailSettings__SenderName` | `Duo Rico Pro` | Não |
 | `EmailSettings__SenderEmail` | Remetente verificado no Brevo | Não |
 | `EmailSettings__BrevoApiKey` | `xkeysib-...` | **Sim** |
+| `DataProtection__CertificateBase64` | Certificado PFX (base64) usado para criptografar o keyring do Data Protection | **Sim** |
+| `DataProtection__CertificatePassword` | Senha do PFX acima | **Sim** |
 
 > ⚠️ **Configure as variáveis antes de disparar o deploy.** A validação de startup impede a aplicação de subir se algo estiver ausente ou inválido, o que leva o serviço a um ciclo de reinício. Se isso acontecer, corrija a variável ou reverta o deploy pelo painel do provedor.
+
+### Data Protection
+
+O keyring do Data Protection (usado por login por cookie, reset de senha e 2FA) é persistido no PostgreSQL via `PersistKeysToDbContext` e criptografado com um certificado, em vez de ficar no disco efêmero do container — caso contrário, todo redeploy/restart invalida sessões ativas e links de reset de senha pendentes.
+
+Isso só é aplicado fora de `Development` — localmente (`dotnet run`, `dotnet ef`) o keyring padrão em disco continua funcionando sem nenhum certificado configurado, mesmo raciocínio do `Provider=Log` do `EmailSettings`.
+
+Gerar o certificado uma única vez (fora do repositório):
+
+```bash
+openssl req -x509 -newkey rsa:2048 -nodes -keyout dp.key -out dp.crt -days 3650 -subj "/CN=DuoRico.Pro DataProtection"
+openssl pkcs12 -export -out dp.pfx -inkey dp.key -in dp.crt -passout pass:<senha-forte>
+```
+
+Converter o PFX para base64 e configurar `DataProtection__CertificateBase64` e `DataProtection__CertificatePassword` no painel do provedor. Guardar o PFX original em um cofre de segredos — nunca no repositório.
 
 ---
 
