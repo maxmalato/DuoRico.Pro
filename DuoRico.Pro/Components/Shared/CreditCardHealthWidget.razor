@@ -4,46 +4,42 @@
 <MudCard Elevation="2" Class="pa-5 rounded-lg mb-8">
     <div class="d-flex flex-column flex-sm-row justify-space-between align-start align-sm-center mb-2 gap-2">
         <div class="d-flex align-center gap-2">
-            <MudIcon Icon="@Icons.Material.Filled.CreditCard" Color="Color.Primary" Size="Size.Large" />
-            <MudText Typo="Typo.h6" Style="font-weight: 700;">Comprometimento de renda</MudText>
+            <MudIcon Icon="@Icons.Material.Filled.CreditScore" Color="Color.Primary" Size="Size.Large"/>
+            <MudText Typo="Typo.h6" Style="font-weight: 700;">Uso do cartão</MudText>
         </div>
-        
-        @if (_percentageUsed <= 10)
-        {
-            <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Filled" Style="font-weight: 600;">Saudável</MudChip>
-        }
-        else
-        {
-            <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled" Style="font-weight: 600;">Alerta de Limite</MudChip>
-        }
+
+        <MudAvatar Color="@_statusColor" Size="Size.Small">
+            <MudIcon Icon="@_statusIcon" Color="Color.Inherit" Size="Size.Small"/>
+        </MudAvatar>
     </div>
 
     <MudText Typo="Typo.body2" Color="Color.Default" Class="mb-4">
-        Os gastos no cartão de crédito não devem ultrapassar 10% da sua receita mensal (@_creditCardLimit.ToString("C", _culture)).
+        Seu limite seguro é de 10% da sua receita mensal.
     </MudText>
 
     @{
-        var progressColor = _percentageUsed <= 10 ? Color.Success : Color.Error;
-        var visualBarFill = Math.Min(_progressBarValue, 100); 
+        var visualBarFill = Math.Min(_progressBarValue, 100);
     }
 
-    <MudProgressLinear Color="@progressColor" Value="@visualBarFill" Size="Size.Large" Class="rounded-lg" Style="height: 24px;">
-        <MudText Typo="Typo.subtitle2" Color="Color.Dark" Style="font-weight: 700;">
+    <MudProgressLinear Color="@_statusColor" Value="@visualBarFill" Size="Size.Large" Class="rounded-lg"
+                       Style="height: 24px;">
+        <MudText Typo="Typo.subtitle2" Style="font-weight: 700; color: white">
             @_progressBarValue.ToString("F0")%
         </MudText>
     </MudProgressLinear>
 
     <div class="d-flex justify-space-between mt-2">
         <MudText Typo="Typo.caption" Color="Color.Dark" Style="font-weight: 600;">
-            Usado: @_creditCardTotal.ToString("C", _culture)
+            Total gasto: @_creditCardTotal.ToString("C", _culture)
         </MudText>
         <MudText Typo="Typo.caption" Color="Color.Default">
-            Limite Seguro: @_creditCardLimit.ToString("C", _culture)
+            Limite seguro: @_creditCardLimit.ToString("C", _culture)
         </MudText>
     </div>
 </MudCard>
 
 @code {
+
     // O que o componente recebe do mundo exterior
     [Parameter] public decimal TotalIncome { get; set; }
     [Parameter] public IEnumerable<TransactionDto> Transactions { get; set; } = new List<TransactionDto>();
@@ -53,6 +49,8 @@
     private decimal _creditCardLimit = 0;
     private double _percentageUsed = 0;
     private double _progressBarValue = 0;
+    private Color _statusColor = Color.Success;
+    private string _statusIcon = Icons.Material.Filled.CheckCircle;
     private CultureInfo _culture = CultureInfo.GetCultureInfo("pt-BR");
 
     // Sempre que o Dashboard passar dados novos, esse método recalcula tudo
@@ -75,5 +73,13 @@
             _percentageUsed = _creditCardTotal > 0 ? 100 : 0;
             _progressBarValue = _creditCardTotal > 0 ? 100 : 0;
         }
+
+        (_statusColor, _statusIcon) = _progressBarValue switch
+        {
+            <= 70 => (Color.Success, Icons.Material.Filled.CheckCircle),
+            > 70 and <= 90 => (Color.Warning, Icons.Material.Filled.WarningAmber),
+            _ => (Color.Error, Icons.Material.Filled.Error)
+        };
     }
+
 }
