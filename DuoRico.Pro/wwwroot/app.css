@@ -114,3 +114,74 @@ h1:focus {
         justify-content: center;
     }
 }
+
+/* Marca (logo + nome) da AppBar: logo em badge branco para contrastar com a barra roxa */
+.appbar-brand-logo {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    background-color: #fff;
+    border-radius: 50%;
+    padding: 3px;
+    box-sizing: border-box;
+}
+
+.mud-typography.appbar-brand-name {
+    white-space: nowrap;
+}
+
+/* Marca (logo + nome) das telas de Login/Registro */
+.auth-brand-logo {
+    width: 48px;
+    height: 48px;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.mud-typography.auth-brand-name {
+    white-space: nowrap;
+}
+
+/* Marca no mobile: logo e nome menores para caberem na mesma linha */
+@media (max-width: 599.98px) {
+    .appbar-brand-logo {
+        width: 30px;
+        height: 30px;
+    }
+
+    .mud-typography.appbar-brand-name {
+        font-size: 1rem;
+    }
+
+    .auth-brand-logo {
+        width: 36px;
+        height: 36px;
+        margin-right: 8px;
+    }
+
+    .mud-typography.auth-brand-name {
+        font-size: 1.5rem;
+    }
+}
+
+/* Telas muito estreitas: reduz mais a marca para não encostar nas bordas do card */
+@media (max-width: 359.98px) {
+    .auth-brand-logo {
+        width: 32px;
+        height: 32px;
+    }
+
+    .mud-typography.auth-brand-name {
+        font-size: 1.375rem;
+    }
+}
+
+/* Login: opções "Lembrar meu acesso" e "Esqueceu sua senha?" empilhadas e centralizadas no mobile */
+@media (max-width: 599.98px) {
+    div.login-options {
+        flex-direction: column;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px;
+    }
+}

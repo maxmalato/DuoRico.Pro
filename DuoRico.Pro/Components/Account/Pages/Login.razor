@@ -19,9 +19,12 @@
 <MudContainer MaxWidth="MaxWidth.Small">
     <MudCard Elevation="4" Class="pa-8 w-100 rounded-lg">
 
-        <MudText Typo="Typo.h4" Align="Align.Center" Color="Color.Primary" Style="font-weight: 700; letter-spacing: 1px;" Class="mb-6">
-            DUO RICO <span style="font-weight: 300;">PRO</span>
-        </MudText>
+        <div class="auth-brand d-flex align-center justify-center mb-6">
+            <img src="favicon.png" alt="" class="auth-brand-logo" />
+            <MudText Typo="Typo.h4" Color="Color.Primary" Style="font-weight: 700; letter-spacing: 1px;" Class="auth-brand-name">
+                DUO RICO <span style="font-weight: 300;">PRO</span>
+            </MudText>
+        </div>
 
         <MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Default" Class="mb-6">
             Bem-vindo! Acesse seu painel financeiro.
@@ -46,10 +49,10 @@
                     <ValidationMessage For="() => Input.Password" class="text-danger mt-1 d-block" style="font-size: 0.85rem;" />
                 </div>
 
-                <div class="d-flex align-center mt-1 w-100 justify-content-between">
+                <div class="login-options d-flex align-center mt-1 w-100 justify-content-between">
                     <div class="form-check">
                         <InputCheckbox @bind-Value="Input.RememberMe" id="Input.RememberMe" class="form-check-input" style="cursor: pointer;" />
-                        <label class="form-check-label" for="Input.RememberMe" style="cursor: pointer; font-size: 0.9rem; justify-self: center">
+                        <label class="form-check-label" for="Input.RememberMe" style="cursor: pointer; font-size: 0.9rem;">
                             Lembrar meu acesso
                         </label>
                     </div>
