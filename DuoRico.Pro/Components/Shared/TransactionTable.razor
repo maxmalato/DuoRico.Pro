@@ -10,8 +10,8 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 
-<div class="d-flex flex-column flex-sm-row justify-space-between align-start align-sm-center mb-8 gap-4">
-    <div class="d-flex align-center gap-2">
+<div class="d-flex flex-column flex-sm-row justify-space-between align-center mb-8 gap-4">
+    <div class="transaction-header-title d-flex align-center gap-2">
         <MudIcon Icon="@(Type == TransactionType.Income ? Icons.Material.Filled.ArrowUpward : Icons.Material.Filled.ArrowDownward)"
                  Color="@ThemeColor"
                  Size="Size.Large" />

@@ -74,3 +74,43 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+/* Filtro de período (PeriodSelector): centralizado e com fonte maior apenas no mobile */
+@media (max-width: 599.98px) {
+    .period-selector {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .period-selector .mud-input-root,
+    .period-selector .mud-input-slot {
+        font-size: 1.0625rem;
+    }
+}
+
+/* Título de seção do Dashboard: centralizado e menor apenas no mobile */
+@media (max-width: 599.98px) {
+    .mud-typography.dashboard-section-title {
+        text-align: center;
+        font-size: 1.25rem;
+    }
+}
+
+/* Cabeçalho de Receitas/Despesas: ícone e título menores apenas no mobile */
+@media (max-width: 599.98px) {
+    .transaction-header-title .mud-typography {
+        font-size: 1.25rem;
+        text-align: center;
+    }
+
+    .transaction-header-title .mud-icon-root {
+        font-size: 1.5rem;
+    }
+}
+
+/* Diálogos de transação: botões de ação centralizados apenas no mobile */
+@media (max-width: 599.98px) {
+    .mud-dialog .mud-dialog-actions.transaction-dialog-actions {
+        justify-content: center;
+    }
+}

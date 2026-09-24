@@ -19,7 +19,7 @@
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-6 mb-8">
     @* CABEÇALHO E FILTROS *@
     <MudGrid Class="align-center mb-4" Spacing="2">
-        <MudItem xs="12" sm="6" Class="d-flex">
+        <MudItem xs="12" sm="6" Class="d-flex justify-center justify-sm-start">
             <MudIcon Icon="@Icons.Material.Filled.Home" Color="Color.Primary" Size="Size.Large" Class="mr-2" />
             <MudText Typo="Typo.h4" Style="font-weight: 700; color: slategray">Dashboard</MudText>
         </MudItem>
@@ -76,7 +76,7 @@
     <CreditCardHealthWidget TotalIncome="_summary.TotalIncome" Transactions="_monthlyTransactions" />
 
     @* LISTA DE ÚLTIMAS DESPESAS *@
-    <MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Class="mb-4">Últimas Despesas de @MonthName</MudText>
+    <MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Class="mb-4 dashboard-section-title">Últimas Despesas de @MonthName</MudText>
 
     <MudCard Elevation="2" Class="rounded-lg">
         @if (_isLoading)
