@@ -142,6 +142,42 @@ h1:focus {
     white-space: nowrap;
 }
 
+/* Botão de mostrar/ocultar senha dentro do campo (Login/Registro) */
+.form-floating.password-field > .form-control {
+    padding-right: 3rem;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 3rem;
+    height: calc(3.5rem + 2px); /* mesma altura do .form-control dentro do .form-floating */
+    z-index: 3; /* acima do label, que é absoluto e tem z-index: 2 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--bs-secondary-color);
+    cursor: pointer;
+}
+
+.password-toggle:hover {
+    color: var(--mud-palette-primary);
+}
+
+.password-toggle:focus-visible {
+    outline: 2px solid var(--mud-palette-primary);
+    outline-offset: -2px;
+    border-radius: 0.375rem;
+}
+
+.password-toggle-icon[hidden] {
+    display: none;
+}
+
 /* Marca no mobile: logo e nome menores para caberem na mesma linha */
 @media (max-width: 599.98px) {
     .appbar-brand-logo {
