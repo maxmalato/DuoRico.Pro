@@ -1,0 +1,77 @@
+@using System.Globalization
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<div @ref="_container">
+    <MudTextField T="string"
+                  Value="@_text"
+                  ValueChanged="OnTextChanged"
+                  Label="@Label"
+                  Placeholder="0,00"
+                  Adornment="Adornment.Start"
+                  AdornmentText="R$"
+                  Validation="@(new Func<string, string?>(Validate))"
+                  Variant="@Variant"
+                  Margin="@Margin" />
+</div>
+
+@code {
+    private static readonly CultureInfo PtBr = new("pt-BR");
+
+    [Parameter] public decimal Value { get; set; }
+    [Parameter] public EventCallback<decimal> ValueChanged { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public Variant Variant { get; set; } = Variant.Text;
+    [Parameter] public Margin Margin { get; set; } = Margin.None;
+
+    private ElementReference _container;
+    private IJSObjectReference? _module;
+    private string _text = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        // Sincroniza o texto apenas quando o valor muda por fora (ex.: diálogo de edição).
+        if (Parse(_text) != Value)
+            _text = Value > 0 ? Value.ToString("N2", PtBr) : string.Empty;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        _module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/moneyMask.js");
+        await _module.InvokeVoidAsync("attach", _container);
+    }
+
+    private async Task OnTextChanged(string? text)
+    {
+        _text = text ?? string.Empty;
+        Value = Parse(_text);
+        await ValueChanged.InvokeAsync(Value);
+    }
+
+    private string? Validate(string? text) =>
+        Parse(text) > 0 ? null : "O valor deve ser maior que zero.";
+
+    // Considera apenas os dígitos: os dois últimos são os centavos.
+    private static decimal Parse(string? text)
+    {
+        var digits = new string((text ?? string.Empty).Where(char.IsAsciiDigit).ToArray());
+        return digits.Length == 0 ? 0m : decimal.Parse(digits, CultureInfo.InvariantCulture) / 100m;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_module is null) return;
+
+        try
+        {
+            await _module.InvokeVoidAsync("detach", _container);
+            await _module.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+            // Circuito já encerrado; nada a liberar no navegador.
+        }
+    }
+}

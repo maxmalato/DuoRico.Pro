@@ -1,6 +1,5 @@
 ﻿@using DuoRico.Pro.DTOs
 @using DuoRico.Pro.Constants
-@using System.Globalization
 
 <MudDialog ActionsClass="transaction-dialog-actions">
     <DialogContent>
@@ -11,7 +10,7 @@
                 </MudItem>
 
                 <MudItem xs="12" sm="6">
-                    <MudNumericField @bind-Value="Model.Amount" Label="Valor*" For="@(() => Model.Amount)" Format="N2" Culture="@(new CultureInfo("pt-BR"))" Min="0.01m" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MoneyField @bind-Value="Model.Amount" Label="Valor*" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
 
                 <MudItem xs="12" sm="6">
