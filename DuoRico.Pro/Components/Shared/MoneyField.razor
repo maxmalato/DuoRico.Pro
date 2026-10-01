@@ -6,6 +6,7 @@
     <MudTextField T="string"
                   Value="@_text"
                   ValueChanged="OnTextChanged"
+                  Immediate="true"
                   Label="@Label"
                   Placeholder="0,00"
                   Adornment="Adornment.Start"
@@ -27,25 +28,39 @@
     private ElementReference _container;
     private IJSObjectReference? _module;
     private string _text = string.Empty;
+    private bool _typing;
 
     protected override void OnParametersSet()
     {
         // Sincroniza o texto apenas quando o valor muda por fora (ex.: diálogo de edição).
         if (Parse(_text) != Value)
+        {
             _text = Value > 0 ? Value.ToString("N2", PtBr) : string.Empty;
+            _typing = false;
+        }
     }
+
+    // Enquanto o usuário digita, quem manda no texto é o DOM: a máscara já escreveu o valor
+    // formatado lá antes do evento sair. Re-renderizar aqui faria o Blazor devolver ao campo
+    // o _text de um round-trip anterior, e em conexão lenta o campo "voltaria" no meio da
+    // digitação. Fora da digitação o render é normal, senão o valor vindo de fora não chegaria
+    // ao campo.
+    protected override bool ShouldRender() => !_typing;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
 
-        _module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/moneyMask.js");
+        // Caminho absoluto: "./js/..." resolveria relativo à URL da página e quebraria em
+        // qualquer rota com mais de um segmento.
+        _module = await JS.InvokeAsync<IJSObjectReference>("import", "/js/moneyMask.js");
         await _module.InvokeVoidAsync("attach", _container);
     }
 
     private async Task OnTextChanged(string? text)
     {
         _text = text ?? string.Empty;
+        _typing = true;
         Value = Parse(_text);
         await ValueChanged.InvokeAsync(Value);
     }
