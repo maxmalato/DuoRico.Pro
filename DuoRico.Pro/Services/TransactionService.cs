@@ -6,24 +6,10 @@ namespace DuoRico.Pro.Services;
 
 public class TransactionService(ITransactionRepository repository) : ITransactionService
 {
-    public async Task<List<TransactionDto>> GetCoupleTransactionsForPeriodAsync(Guid coupleId, int month, int year)
-    {
-        var transaction = await repository.GetByPeriodAsync(coupleId, month, year);
-
-        return transaction.Select(t => new TransactionDto
-        {
-            Id = t.Id,
-            Description = t.Description,
-            Amount = t.Amount,
-            Category = t.Category,
-            Type = t.Type,
-            IsPaid = t.IsPaid,
-            CreatedAt = t.CreatedAt,
-            InstallmentNumber = t.InstallmentNumber,
-            TotalInstallments = t.TotalInstallments,
-            InstallmentGroupId = t.InstallmentGroupId,
-        }).ToList();
-    }
+    // A projeção para TransactionDto e o filtro por tipo acontecem no SQL
+    // (ver TransactionRepository.GetByPeriodAsync), então aqui só repassamos.
+    public Task<List<TransactionDto>> GetCoupleTransactionsForPeriodAsync(Guid coupleId, int month, int year, TransactionType? type = null)
+        => repository.GetByPeriodAsync(coupleId, month, year, type);
 
     public async Task<TransactionSummaryDto> GetSummaryForPeriodAsync(Guid coupleId, int month, int year)
     {

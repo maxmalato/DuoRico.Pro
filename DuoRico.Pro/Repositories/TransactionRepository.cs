@@ -1,4 +1,5 @@
 ﻿using DuoRico.Pro.Data;
+using DuoRico.Pro.DTOs;
 using DuoRico.Pro.Models;
 using DuoRico.Pro.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -31,11 +32,30 @@ public class TransactionRepository(ApplicationDbContext context) : ITransactionR
             .FirstOrDefaultAsync(t => t.Id == id && t.User!.CoupleId == coupleId);
     }
 
-    public async Task<List<Transaction>> GetByPeriodAsync(Guid coupleId, int month, int year)
+    public async Task<List<TransactionDto>> GetByPeriodAsync(Guid coupleId, int month, int year, TransactionType? type = null)
     {
         return await context.Transactions
             .Where(t => t.User!.CoupleId == coupleId && t.Month == month && t.Year == year)
-            .OrderByDescending(t => t.CreatedAt)
+            // Com 'type' nulo o EF elimina o predicado ao montar a query (sem OR no SQL).
+            .Where(t => type == null || t.Type == type)
+            // Mesma ordem exibida na tela: pendentes primeiro (false < true), depois mais recentes.
+            .OrderBy(t => t.IsPaid)
+            .ThenByDescending(t => t.CreatedAt)
+            // Projetar para um tipo não-entidade traz só as colunas usadas e mantém
+            // o resultado fora do change tracker, sem precisar de AsNoTracking().
+            .Select(t => new TransactionDto
+            {
+                Id = t.Id,
+                Description = t.Description,
+                Amount = t.Amount,
+                Category = t.Category,
+                Type = t.Type,
+                IsPaid = t.IsPaid,
+                CreatedAt = t.CreatedAt,
+                InstallmentNumber = t.InstallmentNumber,
+                TotalInstallments = t.TotalInstallments,
+                InstallmentGroupId = t.InstallmentGroupId,
+            })
             .ToListAsync();
     }
 

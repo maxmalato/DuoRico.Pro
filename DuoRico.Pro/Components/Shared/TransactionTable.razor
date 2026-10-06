@@ -150,12 +150,10 @@
         _isLoading = true;
         try
         {
-            var data = await TransactionService.GetCoupleTransactionsForPeriodAsync(_currentCoupleId, _selectedMonth, _selectedYear);
-            _transactions = data
-                .Where(t => t.Type == Type)
-                .OrderBy(t => t.IsPaid)
-                .ThenByDescending(t => t.CreatedAt)
-                .ToList();
+            // O filtro por tipo e a ordenação (pendentes primeiro, depois mais recentes)
+            // são resolvidos no banco; aqui a lista já chega pronta para exibição.
+            _transactions = await TransactionService
+                .GetCoupleTransactionsForPeriodAsync(_currentCoupleId, _selectedMonth, _selectedYear, Type);
 
             CalculateSummaries();
         }
