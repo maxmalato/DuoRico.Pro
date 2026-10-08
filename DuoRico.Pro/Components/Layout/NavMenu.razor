@@ -35,7 +35,7 @@
             <MudNavLink Href="Account/Manage" Icon="@Icons.Material.Filled.AccountCircle">
                 <MudText>@(string.IsNullOrWhiteSpace(_name) ? context.User.Identity?.Name : _name)</MudText>
             </MudNavLink>
-            <form action="Account/Logout" method="post" class="w-100">
+            <form action="Account/Logout" method="post" class="mud-width-full">
                 <AntiforgeryToken />
 
                 <input type="hidden" name="ReturnUrl" value="@currentUrl" />

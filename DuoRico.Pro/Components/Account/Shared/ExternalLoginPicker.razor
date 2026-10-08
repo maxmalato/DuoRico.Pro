@@ -16,16 +16,14 @@
 }
 else
 {
-    <form class="form-horizontal" action="Account/PerformExternalLogin" method="post">
-        <div>
-            <AntiforgeryToken />
-            <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
-            <p>
-                @foreach (var provider in externalLogins)
-                {
-                    <button type="submit" class="btn btn-primary" name="provider" value="@provider.Name" title="Log in using your @provider.DisplayName account">@provider.DisplayName</button>
-                }
-            </p>
+    <form action="Account/PerformExternalLogin" method="post">
+        <AntiforgeryToken />
+        <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
+        <div class="d-flex flex-wrap gap-2">
+            @foreach (var provider in externalLogins)
+            {
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" name="provider" value="@provider.Name" title="@($"Log in using your {provider.DisplayName} account")">@provider.DisplayName</MudButton>
+            }
         </div>
     </form>
 }

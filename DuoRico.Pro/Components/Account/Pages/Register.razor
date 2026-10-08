@@ -19,7 +19,7 @@
 <PageTitle>Registro - Duo Rico Pro</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Small">
-    <MudCard Elevation="4" Class="pa-8 w-100 rounded-lg">
+    <MudCard Elevation="4" Class="pa-8 mud-width-full rounded-lg">
         
         <div class="auth-brand d-flex align-center justify-center mb-2">
             <img src="favicon.png" alt="" class="auth-brand-logo" />
@@ -38,30 +38,30 @@
             
             <div class="d-flex flex-column gap-4">
                 
-                <div class="form-floating">
-                    <InputText @bind-Value="Input.Name" id="Input.Name" class="form-control" autocomplete="name" aria-required="true" placeholder="Digite seu nome" />
-                    <label for="Input.Name">Nome completo</label>
-                    <ValidationMessage For="() => Input.Name" class="text-danger mt-1 d-block" style="font-size: 0.85rem;" />
+                <div class="auth-field">
+                    <InputText @bind-Value="Input.Name" id="Input.Name" class="auth-input" autocomplete="name" aria-required="true" placeholder="Digite seu nome" />
+                    <label for="Input.Name" class="auth-label">Nome completo</label>
+                    <ValidationMessage For="() => Input.Name" class="auth-field-error" />
                 </div>
 
-                <div class="form-floating">
-                    <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="Digite seu e-mail" />
-                    <label for="Input.Email">E-mail</label>
-                    <ValidationMessage For="() => Input.Email" class="text-danger mt-1 d-block" style="font-size: 0.85rem;" />
+                <div class="auth-field">
+                    <InputText @bind-Value="Input.Email" id="Input.Email" class="auth-input" autocomplete="username" aria-required="true" placeholder="Digite seu e-mail" />
+                    <label for="Input.Email" class="auth-label">E-mail</label>
+                    <ValidationMessage For="() => Input.Email" class="auth-field-error" />
                 </div>
 
-                <div class="form-floating password-field">
-                    <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="Digite sua senha" />
+                <div class="auth-field password-field">
+                    <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="auth-input" autocomplete="new-password" aria-required="true" placeholder="Digite sua senha" />
                     <PasswordToggle InputId="Input.Password" />
-                    <label for="Input.Password">Senha</label>
-                    <ValidationMessage For="() => Input.Password" class="text-danger mt-1 d-block" style="font-size: 0.85rem;" />
+                    <label for="Input.Password" class="auth-label">Senha</label>
+                    <ValidationMessage For="() => Input.Password" class="auth-field-error" />
                 </div>
 
-                <div class="form-floating password-field">
-                    <InputText type="password" @bind-Value="Input.ConfirmPassword" id="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="Confirme sua senha" />
+                <div class="auth-field password-field">
+                    <InputText type="password" @bind-Value="Input.ConfirmPassword" id="Input.ConfirmPassword" class="auth-input" autocomplete="new-password" aria-required="true" placeholder="Confirme sua senha" />
                     <PasswordToggle InputId="Input.ConfirmPassword" />
-                    <label for="Input.ConfirmPassword">Confirmar senha</label>
-                    <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger mt-1 d-block" style="font-size: 0.85rem;" />
+                    <label for="Input.ConfirmPassword" class="auth-label">Confirmar senha</label>
+                    <ValidationMessage For="() => Input.ConfirmPassword" class="auth-field-error" />
                 </div>
 
                 <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" Class="mt-2 py-2" Style="font-weight: bold;">

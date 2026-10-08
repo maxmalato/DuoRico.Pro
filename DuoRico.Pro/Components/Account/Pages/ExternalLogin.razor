@@ -19,30 +19,36 @@
 <PageTitle>Register</PageTitle>
 
 <StatusMessage Message="@message" />
-<h1>Register</h1>
-<h2>Associate your @ProviderDisplayName account.</h2>
-<hr />
+<MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Class="mb-2">Register</MudText>
+<MudText Typo="Typo.subtitle1" Class="mb-4">Associate your @ProviderDisplayName account.</MudText>
+<MudDivider Class="mb-6" />
 
-<div  class="alert alert-info">
+<MudAlert Severity="Severity.Info" Elevation="0" Class="mb-6">
     You've successfully authenticated with <strong>@ProviderDisplayName</strong>.
     Please enter an email address for this site below and click the Register button to finish
     logging in.
-</div>
+</MudAlert>
 
-<div class="row">
-    <div class="col-md-4">
+<MudGrid>
+    <MudItem xs="12" sm="8" md="4">
         <EditForm Model="Input" OnValidSubmit="OnValidSubmitAsync" FormName="confirmation" method="post">
             <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert" />
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="email" placeholder="Please enter your email." />
-                <label for="Input.Email" class="form-label">Email</label>
-                <ValidationMessage For="() => Input.Email" />
+            <ValidationSummary class="mud-error-text mb-4" role="alert" />
+
+            <div class="d-flex flex-column gap-4">
+                <div class="auth-field">
+                    <InputText @bind-Value="Input.Email" id="Input.Email" class="auth-input" autocomplete="email" placeholder="Please enter your email." />
+                    <label for="Input.Email" class="auth-label">Email</label>
+                    <ValidationMessage For="() => Input.Email" class="auth-field-error" />
+                </div>
+
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" Class="mud-width-full py-2" Style="font-weight: bold;">
+                    Register
+                </MudButton>
             </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
         </EditForm>
-    </div>
-</div>
+    </MudItem>
+</MudGrid>
 
 @code {
     public const string LoginCallbackAction = "LoginCallback";

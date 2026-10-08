@@ -17,7 +17,7 @@
 <PageTitle>Login - Duo Rico Pro</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Small">
-    <MudCard Elevation="4" Class="pa-8 w-100 rounded-lg">
+    <MudCard Elevation="4" Class="pa-8 mud-width-full rounded-lg">
 
         <div class="auth-brand d-flex align-center justify-center mb-6">
             <img src="favicon.png" alt="" class="auth-brand-logo" />
@@ -37,25 +37,23 @@
 
             <div class="d-flex flex-column gap-4">
 
-                <div class="form-floating">
-                    <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="Digite seu e-mail" />
-                    <label for="Input.Email">E-mail</label>
-                    <ValidationMessage For="() => Input.Email" class="text-danger mt-1 d-block" style="font-size: 0.85rem;" />
+                <div class="auth-field">
+                    <InputText @bind-Value="Input.Email" id="Input.Email" class="auth-input" autocomplete="username" aria-required="true" placeholder="Digite seu e-mail" />
+                    <label for="Input.Email" class="auth-label">E-mail</label>
+                    <ValidationMessage For="() => Input.Email" class="auth-field-error" />
                 </div>
 
-                <div class="form-floating password-field">
-                    <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="Digite sua senha" />
+                <div class="auth-field password-field">
+                    <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="auth-input" autocomplete="current-password" aria-required="true" placeholder="Digite sua senha" />
                     <PasswordToggle InputId="Input.Password" />
-                    <label for="Input.Password">Senha</label>
-                    <ValidationMessage For="() => Input.Password" class="text-danger mt-1 d-block" style="font-size: 0.85rem;" />
+                    <label for="Input.Password" class="auth-label">Senha</label>
+                    <ValidationMessage For="() => Input.Password" class="auth-field-error" />
                 </div>
 
-                <div class="login-options d-flex align-center mt-1 w-100 justify-content-between">
-                    <div class="form-check">
-                        <InputCheckbox @bind-Value="Input.RememberMe" id="Input.RememberMe" class="form-check-input" style="cursor: pointer;" />
-                        <label class="form-check-label" for="Input.RememberMe" style="cursor: pointer; font-size: 0.9rem;">
-                            Lembrar meu acesso
-                        </label>
+                <div class="login-options d-flex align-center mt-1 mud-width-full justify-space-between">
+                    <div class="auth-check">
+                        <InputCheckbox @bind-Value="Input.RememberMe" id="Input.RememberMe" />
+                        <label for="Input.RememberMe">Lembrar meu acesso</label>
                     </div>
                     <a href="Account/ForgotPassword" style="color: var(--mud-palette-primary); text-decoration: none; font-size: 0.9rem;">
                         Esqueceu sua senha?

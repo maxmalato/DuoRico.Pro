@@ -9,27 +9,25 @@
                    U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-:root {
-    /* substitui a stack system-ui do Bootstrap, cobrindo body, tooltips e popovers */
-    --bs-font-sans-serif: 'Inter', sans-serif;
-}
-
 html, body {
     font-family: 'Inter', sans-serif;
 }
 
-a, .btn-link {
-    color: #006bb7;
+/* Utilitários usados nas páginas que o MudBlazor não fornece */
+.text-center {
+    text-align: center !important;
 }
 
-.btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+.text-end {
+    text-align: end !important;
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+.fw-semibold {
+    font-weight: 600 !important;
+}
+
+.bg-transparent {
+    background-color: transparent !important;
 }
 
 .content {
@@ -49,7 +47,7 @@ h1:focus {
 }
 
 .validation-message {
-    color: #e50000;
+    color: var(--mud-palette-error);
 }
 
 .blazor-error-boundary {
@@ -62,17 +60,114 @@ h1:focus {
         content: "An error has occurred."
     }
 
-.darker-border-checkbox.form-check-input {
-    border-color: #929292;
+/* Campos das páginas de conta (SSR estático): inputs nativos com o visual "outlined" do MudBlazor.
+   MudTextField não é usado aqui porque essas páginas não são interativas. */
+.auth-field {
+    position: relative;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-    color: var(--bs-secondary-color);
-    text-align: end;
+.auth-input {
+    display: block;
+    width: 100%;
+    height: 56px;
+    padding: 16.5px 14px;
+    box-sizing: border-box;
+    font: inherit;
+    font-size: 1rem;
+    color: var(--mud-palette-text-primary);
+    background-color: var(--mud-palette-surface);
+    border: 1px solid var(--mud-palette-lines-inputs);
+    border-radius: var(--mud-default-borderradius);
+    outline: none;
+    transition: border-color 200ms, box-shadow 200ms;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-    text-align: start;
+.auth-input:hover {
+    border-color: var(--mud-palette-action-default);
+}
+
+.auth-input:focus {
+    border-color: var(--mud-palette-primary);
+    box-shadow: inset 0 0 0 1px var(--mud-palette-primary);
+}
+
+/* placeholder só aparece com o campo focado, quando o label já subiu */
+.auth-input::placeholder {
+    color: transparent;
+}
+
+.auth-input:focus::placeholder {
+    color: var(--mud-palette-text-disabled);
+}
+
+.auth-label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    max-width: calc(100% - 28px);
+    padding: 0 5px;
+    color: var(--mud-palette-text-secondary);
+    background-color: var(--mud-palette-surface);
+    font-size: 1rem;
+    line-height: 1.15rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+    transform-origin: top left;
+    transform: translate(9px, 19px) scale(1);
+    transition: transform 200ms, color 200ms;
+}
+
+.auth-input:focus ~ .auth-label,
+.auth-input:not(:placeholder-shown) ~ .auth-label {
+    transform: translate(9px, -7px) scale(0.75);
+}
+
+.auth-input:-webkit-autofill ~ .auth-label {
+    transform: translate(9px, -7px) scale(0.75);
+}
+
+.auth-input:focus ~ .auth-label {
+    color: var(--mud-palette-primary);
+}
+
+.auth-field > .auth-input.invalid {
+    outline: none;
+    border-color: var(--mud-palette-error);
+}
+
+.auth-field > .auth-input.valid.modified {
+    outline: none;
+}
+
+.auth-input.invalid ~ .auth-label {
+    color: var(--mud-palette-error);
+}
+
+.auth-field-error {
+    display: block;
+    margin: 4px 14px 0;
+    font-size: 0.75rem;
+}
+
+.auth-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+.auth-check input[type=checkbox] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--mud-palette-primary);
+    cursor: pointer;
+}
+
+.auth-check label {
+    cursor: pointer;
 }
 
 /* Filtro de período (PeriodSelector): centralizado e com fonte maior apenas no mobile */
@@ -143,7 +238,7 @@ h1:focus {
 }
 
 /* Botão de mostrar/ocultar senha dentro do campo (Login/Registro) */
-.form-floating.password-field > .form-control {
+.auth-field.password-field > .auth-input {
     padding-right: 3rem;
 }
 
@@ -152,15 +247,15 @@ h1:focus {
     top: 0;
     right: 0;
     width: 3rem;
-    height: calc(3.5rem + 2px); /* mesma altura do .form-control dentro do .form-floating */
-    z-index: 3; /* acima do label, que é absoluto e tem z-index: 2 */
+    height: 56px; /* mesma altura do .auth-input */
+    z-index: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0;
     border: 0;
     background: transparent;
-    color: var(--bs-secondary-color);
+    color: var(--mud-palette-text-secondary);
     cursor: pointer;
 }
 
