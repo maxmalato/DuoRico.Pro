@@ -1,4 +1,5 @@
 @using System.Globalization
+@using DuoRico.Pro.Constants
 @using DuoRico.Pro.Models
 @using DuoRico.Pro.Data
 @using DuoRico.Pro.Helpers
@@ -8,109 +9,161 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject UserManager<ApplicationUser> UserManager
 @inject IDialogService DialogService
+@inject IBrowserViewportService BrowserViewport
 @inject ISnackbar Snackbar
 
-<div class="d-flex flex-column flex-sm-row justify-space-between align-center mb-8 gap-4">
-    <div class="transaction-header-title d-flex align-center gap-2">
-        <MudIcon Icon="@(Type == TransactionType.Income ? Icons.Material.Filled.ArrowUpward : Icons.Material.Filled.ArrowDownward)"
-                 Color="@ThemeColor"
-                 Size="Size.Large" />
-        <MudText Typo="Typo.h4" Style="font-weight: 600; color: slategray">@PageTitle de @DateHelpers.GetMonthName(_selectedMonth)</MudText>
-    </div>
+<PageHeader Title="@PageTitle" Subtitle="@($"{DateHelpers.GetMonthName(_selectedMonth)} de {_selectedYear}")" Icon="@Icon" IconColor="@ThemeColor">
+    <Actions>
+        <PeriodSelector @bind-Month="_selectedMonth"
+                        @bind-Year="_selectedYear"
+                        IsLoading="_isLoading"
+                        OnFilterChanged="LoadDataAsync" />
+    </Actions>
+</PageHeader>
 
-    <PeriodSelector @bind-Month="_selectedMonth"
-                    @bind-Year="_selectedYear"
-                    IsLoading="_isLoading"
-                    OnFilterChanged="LoadDataAsync" />
+@* RESUMO DO MÊS *@
+<div class="summary-grid mb-4">
+    <div class="summary-item surface-card">
+        <span class="summary-label">Total</span>
+        <span class="summary-value" style="color: var(--mud-palette-@ColorName)">@_totalAmount.ToString("C", _culture)</span>
+    </div>
+    <div class="summary-item surface-card">
+        <span class="summary-label">@PaidLabel</span>
+        <span class="summary-value">@_totalPaid.ToString("C", _culture)</span>
+    </div>
+    <div class="summary-item surface-card">
+        <span class="summary-label">Pendente</span>
+        <span class="summary-value">@_totalUnpaid.ToString("C", _culture)</span>
+    </div>
 </div>
 
-<div class="d-flex flex-column flex-sm-row justify-space-between align-stretch align-sm-center mb-6 gap-4">
-    <MudButton Variant="Variant.Filled"
-               Color="@ThemeColor"
-               StartIcon="@Icons.Material.Filled.AddCircleOutline"
-               Style="font-weight: 600; text-transform: none; border-radius: 4px;"
-               Class="px-4 py-2"
-               OnClick="@(() => OpenNewTransactionDialog())">
-        Nova @(Type == TransactionType.Income ? "Receita" : "Despesa")
-    </MudButton>
-
-    <MudTextField @bind-Value="_searchString"
-                  Placeholder="Pesquisar por descrição ou categoria..."
+@* BUSCA + NOVO *@
+<div class="table-toolbar mb-4">
+    <MudTextField T="string"
+                  Value="@_searchString"
+                  ValueChanged="OnSearchChanged"
+                  Placeholder="Buscar por descrição ou categoria"
                   Adornment="Adornment.Start"
-                  AdornmentIcon="@Icons.Material.Filled.Search"
-                  IconSize="Size.Medium"
+                  AdornmentIcon="@Icons.Material.Rounded.Search"
+                  Clearable="true"
+                  Immediate="true"
+                  DebounceInterval="250"
                   Variant="Variant.Outlined"
                   Margin="Margin.Dense"
-                  Style="max-width: 400px; width: 100%; background-color: white;" />
+                  Class="table-search"
+                  aria-label="Buscar lançamentos" />
+
+    <MudButton Variant="Variant.Filled"
+               Color="@ThemeColor"
+               StartIcon="@Icons.Material.Rounded.Add"
+               Class="hide-xs"
+               OnClick="OpenNewTransactionDialog">
+        Nova @SingularName
+    </MudButton>
 </div>
 
-@* CARDS DE RESUMO *@
-<div class="d-flex flex-column flex-sm-row gap-3 mb-6 mud-width-full">
-    <div class="d-flex align-center flex-grow-1 rounded pa-3" style="border: 1px solid var(--mud-palette-@ThemeColor.ToString().ToLower()); background-color: white;">
-        <MudText Typo="Typo.body2" Color="@ThemeColor" Class="mr-1">Total:</MudText>
-        <MudText Typo="Typo.body2" Color="@ThemeColor" Style="font-weight: 700;">@_totalAmount.ToString("C", _culture)</MudText>
-    </div>
-    <div class="d-flex align-center flex-grow-1 rounded pa-3" style="border: 1px solid var(--mud-palette-@ThemeColor.ToString().ToLower()); background-color: white;">
-        <MudChip T="string" Size="Size.Small" Color="@Color.Success" Variant="Variant.Filled" Class="mr-2 ma-0" Style="font-weight: 600; font-size: 0.70rem;">
-            @(Type == TransactionType.Income ? "Recebido" : "Pago")
-        </MudChip>
-        <MudText Typo="Typo.body2" Color="@ThemeColor" Style="font-weight: 700;">@_totalPaid.ToString("C", _culture)</MudText>
-    </div>
-    <div class="d-flex align-center flex-grow-1 rounded pa-3" style="border: 1px solid var(--mud-palette-@ThemeColor.ToString().ToLower()); background-color: white;">
-        <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Class="mr-2 ma-0 text-white" Style="background-color: #6c757d; font-weight: 600; font-size: 0.70rem;">Pendente</MudChip>
-        <MudText Typo="Typo.body2" Color="@ThemeColor" Style="font-weight: 700;">@_totalUnpaid.ToString("C", _culture)</MudText>
-    </div>
-</div>
+<div class="surface-card table-card">
+    @* Tablet/desktop: tabela *@
+    <MudTable Items="@_filtered"
+              T="TransactionDto"
+              Breakpoint="Breakpoint.None"
+              Hover="true"
+              Loading="@_isLoading"
+              LoadingProgressColor="@ThemeColor"
+              Elevation="0"
+              Class="tx-table hide-xs">
+        <HeaderContent>
+            <MudTh>Descrição</MudTh>
+            <MudTh>Categoria</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh Style="text-align: right">Valor</MudTh>
+            <MudTh Style="width: 56px"><span class="visually-hidden">Ações</span></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>
+                <div class="tx-title">@context.Description</div>
+                <div class="tx-meta">
+                    @context.CreatedAt.ToString("dd/MM/yyyy")
+                    @if (context.TotalInstallments > 1)
+                    {
+                        <span> · Parcela @context.InstallmentNumber/@context.TotalInstallments</span>
+                    }
+                </div>
+            </MudTd>
+            <MudTd>
+                <div class="d-flex align-center gap-2">
+                    <MudIcon Icon="@CategoryConstants.GetIcon(context.Category)" Size="Size.Small" Class="mud-text-secondary" />
+                    @context.Category
+                </div>
+            </MudTd>
+            <MudTd>
+                <StatusChip IsPaid="@context.IsPaid" Type="@Type" Disabled="@(_togglingId == context.Id)"
+                            OnClick="@(() => TogglePaymentStatusAsync(context))" />
+            </MudTd>
+            <MudTd Style="text-align: right">
+                <span class="tx-amount" style="color: var(--mud-palette-@ColorName)">@context.Amount.ToString("C", _culture)</span>
+            </MudTd>
+            <MudTd>@RowActions(context)</MudTd>
+        </RowTemplate>
+        <NoRecordsContent>@EmptyState</NoRecordsContent>
+        <LoadingContent><div class="pa-6 mud-text-secondary">Carregando…</div></LoadingContent>
+    </MudTable>
 
-@* Adicionado Breakpoint.Sm para a tabela virar cards no celular *@
-<MudTable Items="@_transactions" Breakpoint="Breakpoint.Sm" Dense="false" Hover="true" Filter="FilterFunc" Loading="@_isLoading" Elevation="0" Class="bg-transparent">
-    <HeaderContent>
-        <MudTh Style="font-weight: 700; color: #333;">Descrição</MudTh>
-        <MudTh Style="font-weight: 700; color: #333;">Categoria</MudTh>
-        <MudTh Style="font-weight: 700; color: #333;">Estado</MudTh>
-        <MudTh Style="font-weight: 700; color: #333;" Class="text-end">Valor</MudTh>
-        <MudTh Style="font-weight: 700; color: #333;" Class="text-center">Ações</MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="Descrição">
-            <MudText Typo="Typo.subtitle2" Style="font-weight: 700; color: #333;">@context.Description</MudText>
-            <MudText Typo="Typo.caption" Style="color: #666">@context.CreatedAt.ToString("dd/MM/yyyy")</MudText>
-            @if (context.TotalInstallments > 1)
+    @* Mobile: lista compacta (2 linhas por lançamento) *@
+    <div class="tx-list only-xs">
+        @if (_isLoading && _filtered.Count == 0)
+        {
+            @for (int i = 0; i < 4; i++)
             {
-                <MudText Typo="Typo.caption" Class="ml-1">(@context.InstallmentNumber/@context.TotalInstallments)</MudText>
+                <div class="tx-row">
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="40px" Height="40px" Class="rounded-lg" />
+                    <div class="tx-main">
+                        <MudSkeleton Width="70%" />
+                        <MudSkeleton Width="45%" />
+                    </div>
+                </div>
             }
-        </MudTd>
-        <MudTd DataLabel="Categoria">@context.Category</MudTd>
-        <MudTd DataLabel="Status">
-            <MudChip T="string" Size="Size.Small" Color="@(context.IsPaid ? Color.Success : Color.Default)"
-                     Variant="Variant.Filled" OnClick="@(() => TogglePaymentStatusAsync(context))"
-                     Style="@(context.IsPaid ? "" : "background-color: #6c757d; color: white;")">
-                @(context.IsPaid
-                ? (Type == TransactionType.Income ? "Recebido" : "Pago")
-                : "Pendente")
-            </MudChip>
-        </MudTd>
-        <MudTd DataLabel="Valor" Class="text-end">
-            <MudText Typo="Typo.body2" Color="@ThemeColor" Style="font-weight: 700;">@context.Amount.ToString("C", _culture)</MudText>
-        </MudTd>
-        <MudTd DataLabel="Ações" Style="text-align: center">
-            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true">
-                <MudMenuItem OnClick="@(() => OpenEditTransactionDialog(context))">Editar</MudMenuItem>
+        }
+        else if (_filtered.Count == 0)
+        {
+            @EmptyState
+        }
+        else
+        {
+            @foreach (var t in _filtered)
+            {
+                <div class="tx-row" @key="t.Id">
+                    <span class="tx-icon tonal-@ColorName">
+                        <MudIcon Icon="@CategoryConstants.GetIcon(t.Category)" Size="Size.Small" />
+                    </span>
+                    <div class="tx-main">
+                        <div class="tx-title">@t.Description</div>
+                        <div class="tx-meta">
+                            @t.Category · @t.CreatedAt.ToString("dd/MM/yy")
+                            @if (t.TotalInstallments > 1)
+                            {
+                                <span> · @t.InstallmentNumber/@t.TotalInstallments</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="tx-side">
+                        <span class="tx-amount" style="color: var(--mud-palette-@ColorName)">@t.Amount.ToString("C", _culture)</span>
+                        <StatusChip IsPaid="@t.IsPaid" Type="@Type" Disabled="@(_togglingId == t.Id)"
+                                    OnClick="@(() => TogglePaymentStatusAsync(t))" />
+                    </div>
+                    @RowActions(t)
+                </div>
+            }
+        }
+    </div>
+</div>
 
-                @if (context.TotalInstallments > 1)
-                {
-                    <MudMenuItem OnClick="@(() => DeleteTransaction(context, false))" Style="color: var(--mud-palette-error);">Excluir</MudMenuItem>
-                    <MudMenuItem OnClick="@(() => DeleteTransaction(context, true))" Style="color: var(--mud-palette-error);">Excluir esta e as próximas</MudMenuItem>
-
-                }
-                else
-                {
-                    <MudMenuItem OnClick="@(() => DeleteTransaction(context, false))" Style="color: var(--mud-palette-error);">Excluir</MudMenuItem>
-                }
-            </MudMenu>
-        </MudTd>
-    </RowTemplate>
-</MudTable>
+@* Mobile: botão flutuante acima da navegação inferior *@
+<MudFab Color="@ThemeColor"
+        StartIcon="@Icons.Material.Rounded.Add"
+        Class="mobile-fab only-xs"
+        OnClick="OpenNewTransactionDialog"
+        aria-label="@($"Nova {SingularName}")" />
 
 @code {
     [Parameter] public TransactionType Type { get; set; }
@@ -124,9 +177,49 @@
     private Guid _currentCoupleId = Guid.Empty;
     private bool _isLoading = true;
     private string _searchString = "";
+    private Guid? _togglingId;
     private CultureInfo _culture = CultureInfo.GetCultureInfo("pt-BR");
     private List<TransactionDto> _transactions = new();
+    private List<TransactionDto> _filtered = new();
     private decimal _totalAmount, _totalPaid, _totalUnpaid;
+
+    private bool IsIncome => Type == TransactionType.Income;
+    private string SingularName => IsIncome ? "receita" : "despesa";
+    private string PaidLabel => IsIncome ? "Recebido" : "Pago";
+    private string ColorName => ThemeColor.ToString().ToLowerInvariant();
+
+    private RenderFragment EmptyState => @<div class="empty-state">
+        <span class="empty-state-icon tonal-@ColorName"><MudIcon Icon="@Icon" /></span>
+        @if (string.IsNullOrWhiteSpace(_searchString))
+        {
+            <MudText Typo="Typo.subtitle1">Nenhuma @SingularName em @DateHelpers.GetMonthName(_selectedMonth)</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">Adicione a primeira para acompanhar o mês.</MudText>
+            <MudButton Variant="Variant.Text" Color="@ThemeColor" StartIcon="@Icons.Material.Rounded.Add" OnClick="OpenNewTransactionDialog">Nova @SingularName</MudButton>
+        }
+        else
+        {
+            <MudText Typo="Typo.subtitle1">Nada encontrado para "@_searchString"</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">Tente outro termo de busca.</MudText>
+        }
+    </div>;
+
+    private RenderFragment RowActions(TransactionDto t) => @<MudMenu Icon="@Icons.Material.Rounded.MoreVert"
+                                                                     Size="Size.Small"
+                                                                     Dense="true"
+                                                                     AnchorOrigin="Origin.BottomRight"
+                                                                     TransformOrigin="Origin.TopRight"
+                                                                     AriaLabel="@($"Ações de {t.Description}")">
+        <MudMenuItem Icon="@Icons.Material.Rounded.Edit" OnClick="@(() => OpenEditTransactionDialog(t))">Editar</MudMenuItem>
+        <MudMenuItem Icon="@Icons.Material.Rounded.Delete" IconColor="Color.Error" OnClick="@(() => DeleteTransaction(t, false))">
+            @(t.TotalInstallments > 1 ? "Excluir esta parcela" : "Excluir")
+        </MudMenuItem>
+        @if (t.TotalInstallments > 1)
+        {
+            <MudMenuItem Icon="@Icons.Material.Rounded.DeleteSweep" IconColor="Color.Error" OnClick="@(() => DeleteTransaction(t, true))">
+                Excluir esta e as próximas
+            </MudMenuItem>
+        }
+    </MudMenu>;
 
     protected override async Task OnInitializedAsync()
     {
@@ -142,6 +235,9 @@
                 await LoadDataAsync();
             }
         }
+
+        // Usuário sem casal vinculado: não há o que carregar
+        if (_currentCoupleId == Guid.Empty) _isLoading = false;
     }
 
     private async Task LoadDataAsync()
@@ -156,6 +252,7 @@
                 .GetCoupleTransactionsForPeriodAsync(_currentCoupleId, _selectedMonth, _selectedYear, Type);
 
             CalculateSummaries();
+            ApplyFilter();
         }
         finally { _isLoading = false; StateHasChanged(); }
     }
@@ -164,14 +261,31 @@
     {
         _totalAmount = _transactions.Sum(t => t.Amount);
         _totalPaid = _transactions.Where(t => t.IsPaid).Sum(t => t.Amount);
-        _totalUnpaid = _transactions.Where(t => !t.IsPaid).Sum(t => t.Amount);
+        _totalUnpaid = _totalAmount - _totalPaid;
     }
 
-    private bool FilterFunc(TransactionDto t) =>
-        string.IsNullOrWhiteSpace(_searchString) || t.Description.Contains(_searchString, StringComparison.OrdinalIgnoreCase) || t.Category.Contains(_searchString, StringComparison.OrdinalIgnoreCase);
+    private void OnSearchChanged(string? value)
+    {
+        _searchString = value ?? "";
+        ApplyFilter();
+    }
+
+    // Filtra uma vez por busca/carga, em vez de a cada renderização
+    private void ApplyFilter()
+    {
+        _filtered = string.IsNullOrWhiteSpace(_searchString)
+            ? _transactions
+            : _transactions
+                .Where(t => t.Description.Contains(_searchString, StringComparison.OrdinalIgnoreCase)
+                         || t.Category.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+    }
 
     private async Task TogglePaymentStatusAsync(TransactionDto t)
     {
+        if (_togglingId is not null) return;
+
+        _togglingId = t.Id;
         t.IsPaid = !t.IsPaid;
         try
         {
@@ -180,48 +294,50 @@
 
             await LoadDataAsync();
 
-            CalculateSummaries();
-
             Snackbar.Add("Status atualizado.", Severity.Success);
         }
         catch { t.IsPaid = !t.IsPaid; Snackbar.Add("Erro ao atualizar.", Severity.Error); }
+        finally { _togglingId = null; }
+    }
+
+    // No celular o formulário abre em tela cheia
+    private async Task<DialogOptions> GetDialogOptionsAsync()
+    {
+        var breakpoint = await BrowserViewport.GetCurrentBreakpointAsync();
+        return new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            FullScreen = breakpoint == Breakpoint.Xs
+        };
     }
 
     private async Task OpenNewTransactionDialog()
     {
-        // 1. Passamos os parâmetros EXATOS que o Dialog espera, usando o 'Type' atual (Receita ou Despesa)
-        var parameters = new DialogParameters<TransactionDialog>
+        var parameters = new DialogParameters<TransactionFormDialog>
         {
             { x => x.Type, Type },
-            { x => x.ColorTheme, ThemeColor },
-            { x => x.CoupleId, _currentCoupleId }
+            { x => x.DefaultMonth, _selectedMonth },
+            { x => x.DefaultYear, _selectedYear }
         };
 
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-
-        // Abre o Modal com o título dinâmico (Ex: "Nova Despesa")
-        string modalTitle = $"Nova {(Type == TransactionType.Income ? "Receita" : "Despesa")}";
-        var dialog = await DialogService.ShowAsync<TransactionDialog>(modalTitle, parameters, options);
+        var dialog = await DialogService.ShowAsync<TransactionFormDialog>($"Nova {SingularName}", parameters, await GetDialogOptionsAsync());
         var result = await dialog.Result;
 
-        // 2. Se o usuário preencheu e clicou em Salvar
-        if (!result.Canceled && result.Data is CreateTransactionDto newTransaction)
+        if (result is { Canceled: false, Data: CreateTransactionDto newTransaction })
         {
             try
             {
                 // Forçamos o tipo correto mais uma vez por segurança
                 newTransaction.Type = Type;
 
-                // 3. AGORA SIM! Chamamos o seu backend para salvar no banco
                 var success = await TransactionService.CreateTransactionAsync(newTransaction, _currentUserId, _currentCoupleId);
 
                 if (success)
                 {
-                    Snackbar.Add($"Transação criada com sucesso!", Severity.Success);
-
-                    // Recarrega a tabela com a nova transação
+                    Snackbar.Add($"{(IsIncome ? "Receita" : "Despesa")} adicionada!", Severity.Success);
                     await LoadDataAsync();
-                    StateHasChanged();
                 }
                 else
                 {
@@ -237,36 +353,33 @@
 
     private async Task OpenEditTransactionDialog(TransactionDto t)
     {
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-
-        var updateModel = new UpdateTransactionDto
+        var parameters = new DialogParameters<TransactionFormDialog>
         {
-            Id = t.Id,
-            Description = t.Description,
-            Amount = t.Amount,
-            Category = t.Category,
-            IsPaid = t.IsPaid,
-            Type = t.Type
+            { x => x.Type, t.Type },
+            {
+                x => x.Existing, new UpdateTransactionDto
+                {
+                    Id = t.Id,
+                    Description = t.Description,
+                    Amount = t.Amount,
+                    Category = t.Category,
+                    IsPaid = t.IsPaid,
+                    Type = t.Type
+                }
+            }
         };
 
-        var parameters = new DialogParameters { ["Model"] = updateModel };
-        var modalTitle = $"Editar {(t.Type == TransactionType.Income ? "Receita" : "Despesa")}";
-        var dialog = await DialogService.ShowAsync<EditTransactionDialog>(modalTitle, parameters, options);
+        var dialog = await DialogService.ShowAsync<TransactionFormDialog>($"Editar {SingularName}", parameters, await GetDialogOptionsAsync());
         var result = await dialog.Result;
 
-        if (!result!.Canceled && result.Data != null)
+        if (result is { Canceled: false, Data: UpdateTransactionDto updatedTransaction })
         {
-            var updatedTransaction = (UpdateTransactionDto)result.Data;
-
             var success = await TransactionService.UpdateTransactionAsync(updatedTransaction, _currentCoupleId);
 
             if (success)
             {
-                Snackbar.Add($"Transação atualizada com sucesso!", Severity.Success);
-
+                Snackbar.Add("Alterações salvas!", Severity.Success);
                 await LoadDataAsync();
-
-                StateHasChanged();
             }
             else
             {
@@ -281,7 +394,7 @@
             ? $"Tem certeza que deseja excluir a parcela {t.InstallmentNumber}/{t.TotalInstallments} e todas as seguintes de '{t.Description}'?"
             : $"Tem certeza que deseja excluir {(t.TotalInstallments > 1 ? "apenas esta parcela de" : "a transação")} '{t.Description}'?";
 
-        bool? result = await DialogService.ShowMessageBoxAsync("Confirmar Exclusão", message, yesText: "Sim, excluir", cancelText: "Cancelar");
+        bool? result = await DialogService.ShowMessageBoxAsync("Confirmar exclusão", message, yesText: "Sim, excluir", cancelText: "Cancelar");
 
         if (result == true)
         {

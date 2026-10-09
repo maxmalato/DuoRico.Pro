@@ -14,24 +14,24 @@
 <PageTitle>Confirmação de E-mail - Duo Rico Pro</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Small" Class="mt-8 mb-8">
-    <MudPaper Elevation="3" Class="pa-8 rounded-lg text-center" Style="border: 1px solid var(--mud-palette-lines-default);">
+    <MudPaper Elevation="0" Outlined="true" Class="pa-6 pa-sm-8 text-center">
 
         @if (isError)
         {
             <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Color="Color.Error" Size="Size.Large" Class="mb-4" Style="width: 64px; height: 64px;" />
-            <MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Class="mb-2">Ops! Algo deu errado</MudText>
+            <MudText Typo="Typo.h5" Color="Color.Dark" Class="mb-2">Ops! Algo deu errado</MudText>
         }
         else if (!string.IsNullOrEmpty(message))
         {
             <MudIcon Icon="@Icons.Material.Filled.MarkEmailRead" Color="Color.Success" Size="Size.Large" Class="mb-4" Style="width: 64px; height: 64px;" />
-            <MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Class="mb-2">E-mail Atualizado!</MudText>
+            <MudText Typo="Typo.h5" Color="Color.Dark" Class="mb-2">E-mail Atualizado!</MudText>
         }
 
         <MudText Typo="Typo.body1" Class="mb-6">
             @message
         </MudText>
 
-        <MudButton Href="/login" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Size="Size.Large" Style="font-weight: bold;">
+        <MudButton Href="/login" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Size="Size.Large">
             Ir para o Login
         </MudButton>
 

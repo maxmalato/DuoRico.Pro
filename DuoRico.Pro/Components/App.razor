@@ -1,9 +1,12 @@
-﻿<!DOCTYPE html>
-<html lang=pt-br>
+@using DuoRico.Pro.Services
+
+<!DOCTYPE html>
+<html lang="pt-br">
 
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="@(IsDarkMode ? "#171A21" : "#FFFFFF")" />
     <base href="/" />
     <ResourcePreloader />
     <link rel="preload" as="font" type="font/woff2" href="fonts/inter-latin.woff2" crossorigin />
@@ -12,11 +15,12 @@
     <link rel="stylesheet" href="@Assets["DuoRico.Pro.styles.css"]" />
     <ImportMap />
     <link rel="icon" type="image/png" href="favicon.png" />
+    <script src="@Assets["js/theme.js"]"></script>
     <HeadOutlet @rendermode="PageRenderMode" />
 </head>
 
 <body>
-    <Routes @rendermode="PageRenderMode" />
+    <Routes @rendermode="PageRenderMode" ThemePreference="@ThemePreference" IsDarkMode="@IsDarkMode" />
     <ReconnectModal />
     <script src="@Assets["_framework/blazor.web.js"]"></script>
     <script src="@Assets["_content/MudBlazor/MudBlazor.min.js"]"></script>
@@ -30,4 +34,10 @@
 
     private IComponentRenderMode? PageRenderMode =>
         HttpContext.AcceptsInteractiveRouting() ? InteractiveServer : null;
+
+    // Tema lido dos cookies (ver wwwroot/js/theme.js) para a primeira renderização já sair no tema certo
+    private string? ThemePreference => HttpContext.Request.Cookies[ThemeService.PreferenceCookie];
+
+    private bool IsDarkMode => ThemeService.ResolveIsDarkMode(
+        ThemePreference, HttpContext.Request.Cookies[ThemeService.SystemCookie]);
 }

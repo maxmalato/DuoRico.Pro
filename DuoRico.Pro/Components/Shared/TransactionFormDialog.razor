@@ -1,0 +1,204 @@
+@using DuoRico.Pro.Constants
+@using DuoRico.Pro.Helpers
+@using DuoRico.Pro.Models
+
+@* Criação e edição de lançamentos. Sem Existing cria (com mês/ano e parcelas) e devolve CreateTransactionDto;
+   com Existing edita e devolve UpdateTransactionDto. *@
+<MudDialog ContentClass="transaction-dialog-content" ActionsClass="transaction-dialog-actions">
+    <TitleContent>
+        <div class="d-flex align-center gap-3">
+            <span class="page-header-icon tonal-@(IsIncome ? "success" : "error")">
+                <MudIcon Icon="@(IsEdit ? Icons.Material.Rounded.Edit : Icons.Material.Rounded.Add)"/>
+            </span>
+            <MudText Typo="Typo.h6">@(IsEdit ? "Editar" : "Nova") @(IsIncome ? "receita" : "despesa")</MudText>
+        </div>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudGrid Spacing="3">
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_description"
+                                  Label="Descrição"
+                                  Required="true"
+                                  RequiredError="A descrição é obrigatória."
+                                  Variant="Variant.Outlined"
+                                  MaxLength="200"/>
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MoneyField @bind-Value="_amount" Label="@(_installments > 1 ? "Valor da parcela" : "Valor")"
+                                Variant="Variant.Outlined"/>
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudSelect @bind-Value="_category"
+                               Label="Categoria"
+                               Required="true"
+                               RequiredError="A categoria é obrigatória."
+                               Variant="Variant.Outlined">
+
+                        @foreach (var category in Categories)
+                        {
+                            <MudSelectItem Value="@category">
+                                <div class="d-flex align-center gap-2">
+                                    <MudIcon Icon="@CategoryConstants.GetIcon(category)" Size="Size.Small"
+                                             Class="mud-text-secondary"/>
+                                    @category
+                                </div>
+                            </MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                @if (!IsEdit)
+                {
+                    <MudItem xs="6" sm="4">
+                        <MudSelect @bind-Value="_month" Label="Mês" Variant="Variant.Outlined"
+                        >
+                            @for (int i = 1; i <= 12; i++)
+                            {
+                                var month = i;
+                                <MudSelectItem Value="@month">@DateHelpers.GetMonthName(month)</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="6" sm="4">
+                        <MudSelect @bind-Value="_year" Label="Ano" Variant="Variant.Outlined"
+                        >
+                            @for (int i = 2025; i <= DateTime.Now.Year + 3; i++)
+                            {
+                                var year = i;
+                                <MudSelectItem Value="@year">@year</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12" sm="4">
+                        <MudSelect @bind-Value="_installments"
+                                   Label="Parcelas"
+                                   Variant="Variant.Outlined"
+                                   HelperText="@InstallmentsHelper">
+                            @for (int i = 1; i <= 48; i++)
+                            {
+                                var installments = i;
+                                <MudSelectItem
+                                    Value="@installments">@(installments == 1 ? "À vista" : $"{installments}x")</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                }
+
+                <MudItem xs="12">
+                    <div class="transaction-dialog-paid surface-card">
+                        <div>
+                            <MudText Typo="Typo.subtitle2">@(IsIncome ? "Já recebido" : "Já pago")</MudText>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Você pode alterar isso depois pela
+                                lista.
+                            </MudText>
+                        </div>
+                        <MudSwitch @bind-Value="_isPaid" Color="Color.Success"
+                                   aria-label="@(IsIncome ? "Já recebido" : "Já pago")"/>
+                    </div>
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text" Color="Color.Default">Cancelar</MudButton>
+        <MudButton OnClick="Submit"
+                   Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@(IsEdit ? Icons.Material.Rounded.Check : Icons.Material.Rounded.Add)">
+            @(IsEdit ? "Salvar alterações" : "Adicionar")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public TransactionType Type { get; set; }
+
+    /// <summary>Lançamento a editar. Nulo = criação.</summary>
+    [Parameter]
+    public UpdateTransactionDto? Existing { get; set; }
+
+    /// <summary>Período sugerido para a primeira parcela (o mês aberto na lista).</summary>
+    [Parameter]
+    public int DefaultMonth { get; set; }
+
+    [Parameter] public int DefaultYear { get; set; }
+
+    private MudForm _form = default!;
+    private string _description = "";
+    private decimal _amount;
+    private string _category = "";
+    private int _month;
+    private int _year;
+    private int _installments = 1;
+    private bool _isPaid;
+
+    private bool IsEdit => Existing is not null;
+    private bool IsIncome => Type == TransactionType.Income;
+    private IReadOnlyList<string> Categories => CategoryConstants.GetCategoriesByType(Type);
+
+    // O valor informado é o de cada parcela (o serviço replica o mesmo valor em todos os meses)
+    private string? InstallmentsHelper => _installments > 1 && _amount > 0
+        ? $"Total: {(_amount * _installments).ToString("C", PtBr)}"
+        : null;
+
+    private static readonly System.Globalization.CultureInfo PtBr = System.Globalization.CultureInfo.GetCultureInfo("pt-BR");
+
+    protected override void OnInitialized()
+    {
+        if (Existing is not null)
+        {
+            Type = Existing.Type;
+            _description = Existing.Description;
+            _amount = Existing.Amount;
+            _category = Existing.Category;
+            _isPaid = Existing.IsPaid;
+            return;
+        }
+
+        var nextMonth = DateTime.Now.AddMonths(1);
+        _month = DefaultMonth is >= 1 and <= 12 ? DefaultMonth : nextMonth.Month;
+        _year = DefaultYear > 0 ? DefaultYear : nextMonth.Year;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Submit()
+    {
+        await _form.ValidateAsync();
+        if (!_form.IsValid) return;
+
+        object result = Existing is not null
+            ? new UpdateTransactionDto
+            {
+                Id = Existing.Id,
+                Type = Type,
+                Description = _description.Trim(),
+                Amount = _amount,
+                Category = _category,
+                IsPaid = _isPaid
+            }
+            : new CreateTransactionDto
+            {
+                Type = Type,
+                Description = _description.Trim(),
+                Amount = _amount,
+                Category = _category,
+                Month = _month,
+                Year = _year,
+                InstallmentNumber = _installments,
+                IsPaid = _isPaid
+            };
+
+        MudDialog.Close(DialogResult.Ok(result));
+    }
+
+}

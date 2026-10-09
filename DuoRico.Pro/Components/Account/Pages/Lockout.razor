@@ -1,8 +1,12 @@
-﻿@page "/Account/Lockout"
+@page "/Account/Lockout"
 
-<PageTitle>Locked out</PageTitle>
+@layout DuoRico.Pro.Components.Layout.AuthLayout
 
-<header>
-    <MudText Typo="Typo.h4" Color="Color.Error" Class="mb-2">Locked out</MudText>
-    <MudText Typo="Typo.body1" Color="Color.Error" role="alert">This account has been locked out, please try again later.</MudText>
-</header>
+<PageTitle>Conta bloqueada - Duo Rico Pro</PageTitle>
+
+<AuthMessageCard Title="Conta temporariamente bloqueada"
+                 Icon="@Icons.Material.Rounded.Lock"
+                 IconColor="Color.Error"
+                 ActionText="Voltar para o login">
+    <span role="alert">Houve muitas tentativas de acesso. Aguarde alguns minutos e tente novamente.</span>
+</AuthMessageCard>

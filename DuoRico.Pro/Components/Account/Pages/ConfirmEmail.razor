@@ -1,4 +1,6 @@
-﻿@page "/Account/ConfirmEmail"
+@page "/Account/ConfirmEmail"
+
+@layout DuoRico.Pro.Components.Layout.AuthLayout
 
 @using System.Text
 @using Microsoft.AspNetCore.Identity
@@ -8,13 +10,17 @@
 @inject UserManager<ApplicationUser> UserManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Confirm email</PageTitle>
+<PageTitle>Confirmar e-mail - Duo Rico Pro</PageTitle>
 
-<h1>Confirm email</h1>
-<StatusMessage Message="@statusMessage" />
+<AuthMessageCard Title="@(succeeded ? "E-mail confirmado!" : "Não foi possível confirmar")"
+                 Icon="@(succeeded ? Icons.Material.Rounded.MarkEmailRead : Icons.Material.Rounded.ErrorOutline)"
+                 IconColor="@(succeeded ? Color.Success : Color.Error)">
+    @statusMessage
+</AuthMessageCard>
 
 @code {
     private string? statusMessage;
+    private bool succeeded;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -37,13 +43,16 @@
         if (user is null)
         {
             HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
-            statusMessage = $"Error loading user with ID {UserId}";
+            statusMessage = "Usuário não encontrado. O link pode estar incorreto.";
         }
         else
         {
             var code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(Code));
             var result = await UserManager.ConfirmEmailAsync(user, code);
-            statusMessage = result.Succeeded ? "Thank you for confirming your email." : "Error confirming your email.";
+            succeeded = result.Succeeded;
+            statusMessage = result.Succeeded
+                ? "Obrigado por confirmar seu e-mail. Agora você já pode entrar."
+                : "O link de confirmação é inválido ou expirou.";
         }
     }
 }

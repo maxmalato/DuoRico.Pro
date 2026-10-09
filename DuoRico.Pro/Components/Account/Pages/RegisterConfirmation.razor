@@ -1,4 +1,6 @@
-﻿@page "/Account/RegisterConfirmation"
+@page "/Account/RegisterConfirmation"
+
+@layout DuoRico.Pro.Components.Layout.AuthLayout
 
 @using System.Text
 @using Microsoft.AspNetCore.Identity
@@ -11,23 +13,24 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Register confirmation</PageTitle>
+<PageTitle>Confirme seu cadastro - Duo Rico Pro</PageTitle>
 
-<h1>Register confirmation</h1>
+<AuthMessageCard Title="Confirme seu e-mail"
+                 Icon="@Icons.Material.Rounded.MarkEmailUnread"
+                 ActionText="Voltar para o login">
+    <StatusMessage Message="@statusMessage" />
 
-<StatusMessage Message="@statusMessage" />
-
-@if (emailConfirmationLink is not null)
-{
-    <p>
-        This app does not currently have a real email sender registered, see <a href="https://aka.ms/aspaccountconf">these docs</a> for how to configure a real email sender.
-        Normally this would be emailed: <a href="@emailConfirmationLink">Click here to confirm your account</a>
-    </p>
-}
-else
-{
-    <p role="alert">Please check your email to confirm your account.</p>
-}
+    @if (emailConfirmationLink is not null)
+    {
+        @* Só acontece com o provedor "Log" (desenvolvimento): não há e-mail real, então o link aparece aqui *@
+        <p class="mb-2">Ambiente de desenvolvimento: nenhum e-mail foi enviado.</p>
+        <MudLink Href="@emailConfirmationLink">Clique aqui para confirmar sua conta</MudLink>
+    }
+    else
+    {
+        <span role="alert">Enviamos um link de confirmação. Verifique sua caixa de entrada (e a pasta de spam) para ativar sua conta.</span>
+    }
+</AuthMessageCard>
 
 @code {
     private string? emailConfirmationLink;
@@ -54,7 +57,7 @@ else
         if (user is null)
         {
             HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
-            statusMessage = "Error finding user for unspecified email";
+            statusMessage = "Erro: usuário não encontrado para o e-mail informado.";
         }
         else if (EmailSender is LoggingEmailSender)
         {

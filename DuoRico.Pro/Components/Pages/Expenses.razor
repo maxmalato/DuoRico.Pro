@@ -1,4 +1,4 @@
-﻿@page "/expenses"
+@page "/expenses"
 
 @using DuoRico.Pro.Components.Shared
 @using DuoRico.Pro.Models
@@ -8,9 +8,7 @@
 
 <PageTitle>Duo Rico Pro - Despesas</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6 mb-8">
-    <TransactionTable Type="TransactionType.Expense"
-                      ThemeColor="Color.Error"
-                      PageTitle="Despesas"
-                      Icon="Icons.Material.Outlined.ArrowCircleDown" />
-</MudContainer>
+<TransactionTable Type="TransactionType.Expense"
+                  ThemeColor="Color.Error"
+                  PageTitle="Despesas"
+                  Icon="@Icons.Material.Rounded.TrendingDown" />

@@ -1,5 +1,11 @@
 @using DuoRico.Pro.Components.Account.Shared
+@using DuoRico.Pro.Services
 
+@inject ThemeService ThemeService
+
+@* Páginas de conta (/Account/*) são SSR estático: componentes que dependem de interatividade
+   (menu do usuário, troca de tema) consultam este valor para não renderizar controles mortos. *@
+<CascadingValue Value="@(AssignedRenderMode is not null)" Name="InteractivePage" IsFixed="true">
 <Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
         <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
@@ -30,3 +36,15 @@
         </LayoutView>
     </NotFound>
 </Router>
+</CascadingValue>
+
+@code {
+    // Vêm do App.razor (cookies da requisição) e inicializam o tema desta página/circuito
+    [Parameter] public string? ThemePreference { get; set; }
+    [Parameter] public bool IsDarkMode { get; set; }
+
+    protected override void OnInitialized()
+    {
+        ThemeService.Initialize(ThemePreference, IsDarkMode);
+    }
+}

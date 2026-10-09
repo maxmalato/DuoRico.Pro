@@ -1,44 +1,70 @@
-﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity
 @using DuoRico.Pro.Data
 
 @inject SignInManager<ApplicationUser> SignInManager
 
-<MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Primary" Class="pa-2">
+@* As páginas de conta são SSR estático: navegação só com links e formulário, sem depender de JS *@
 
-    <MudNavLink Href="Account/Manage" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Person">
-        <MudText Typo="Typo.subtitle2" Style="font-weight: 600;">Perfil</MudText>
-    </MudNavLink>
+@* Desktop: lista vertical *@
+<nav class="manage-nav-vertical surface-card pa-2" aria-label="Seções da conta">
+    <MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Primary">
+        @foreach (var item in Items)
+        {
+            <MudNavLink Href="@item.Href" Match="@item.Match" Icon="@item.Icon">@item.Label</MudNavLink>
+        }
+    </MudNavMenu>
 
-    <MudNavLink Href="Account/Manage/Email" Icon="@Icons.Material.Filled.Email">
-        <MudText Typo="Typo.subtitle2" Style="font-weight: 600;">E-mail</MudText>
-    </MudNavLink>
+    <MudDivider Class="my-2" />
 
-    <MudNavLink Href="Account/Manage/ChangePassword" Icon="@Icons.Material.Filled.Lock">
-        <MudText Typo="Typo.subtitle2" Style="font-weight: 600;">Senha</MudText>
-    </MudNavLink>
+    <form action="Account/Logout" method="post">
+        <AntiforgeryToken />
+        <input type="hidden" name="ReturnUrl" value="login" />
+        <button type="submit" class="user-menu-logout manage-nav-logout">
+            <MudIcon Icon="@Icons.Material.Rounded.Logout" Color="Color.Error" Size="Size.Small" Class="mr-3" />
+            <MudText Typo="Typo.body2" Color="Color.Error">Sair</MudText>
+        </button>
+    </form>
+</nav>
 
-    @if (hasExternalLogins)
+@* Mobile/tablet: abas roláveis na horizontal *@
+<nav class="manage-tabs" aria-label="Seções da conta">
+    @foreach (var item in Items)
     {
-        <MudNavLink Href="Account/Manage/ExternalLogins" Icon="@Icons.Material.Filled.Link">
-            <MudText Typo="Typo.subtitle2" Style="font-weight: 600;">Logins externos</MudText>
-        </MudNavLink>
+        <NavLink href="@item.Href" Match="@item.Match" class="manage-tab" ActiveClass="active">
+            <MudIcon Icon="@item.Icon" Size="Size.Small" />
+            <span>@item.ShortLabel</span>
+        </NavLink>
     }
-
-    <MudNavLink Href="Account/Manage/TwoFactorAuthentication" Icon="@Icons.Material.Filled.Security">
-        <MudText Typo="Typo.subtitle2" Style="font-weight: 600;">Autenticação de dois fatores</MudText>
-    </MudNavLink>
-
-    <MudNavLink Href="Account/Manage/PersonalData" Icon="@Icons.Material.Filled.PrivacyTip">
-        <MudText Typo="Typo.subtitle2" Style="font-weight: 600;">Dados pessoais</MudText>
-    </MudNavLink>
-
-</MudNavMenu>
+    <form action="Account/Logout" method="post" class="d-contents">
+        <AntiforgeryToken />
+        <input type="hidden" name="ReturnUrl" value="login" />
+        <button type="submit" class="manage-tab manage-tab-logout">
+            <MudIcon Icon="@Icons.Material.Rounded.Logout" Size="Size.Small" />
+            <span>Sair</span>
+        </button>
+    </form>
+</nav>
 
 @code {
-    private bool hasExternalLogins;
+    private sealed record NavItem(string Href, string Icon, string Label, string ShortLabel, NavLinkMatch Match = NavLinkMatch.Prefix);
+
+    private List<NavItem> Items = new();
 
     protected override async Task OnInitializedAsync()
     {
-        hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();
+        Items =
+        [
+            new("Account/Manage", Icons.Material.Rounded.Person, "Perfil", "Perfil", NavLinkMatch.All),
+            new("Account/Manage/Email", Icons.Material.Rounded.Email, "E-mail", "E-mail"),
+            new("Account/Manage/ChangePassword", Icons.Material.Rounded.Lock, "Senha", "Senha")
+        ];
+
+        if ((await SignInManager.GetExternalAuthenticationSchemesAsync()).Any())
+        {
+            Items.Add(new("Account/Manage/ExternalLogins", Icons.Material.Rounded.Link, "Logins externos", "Logins"));
+        }
+
+        Items.Add(new("Account/Manage/TwoFactorAuthentication", Icons.Material.Rounded.Security, "Autenticação de dois fatores", "2FA"));
+        Items.Add(new("Account/Manage/PersonalData", Icons.Material.Rounded.PrivacyTip, "Dados pessoais", "Dados"));
     }
 }

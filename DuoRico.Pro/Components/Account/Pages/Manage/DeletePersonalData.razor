@@ -14,14 +14,14 @@
 
 <PageTitle>Excluir Conta - Duo Rico Pro</PageTitle>
 
-<MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Class="mb-6">Excluir Conta</MudText>
+<MudText Typo="Typo.h5" Color="Color.Dark" Class="mb-6">Excluir Conta</MudText>
 
 <StatusMessage Message="@message" />
 
 <MudGrid>
     <MudItem xs="12" sm="10" md="8">
-        <MudAlert Severity="Severity.Error" Class="mb-6" Elevation="1">
-            <MudText Typo="Typo.subtitle2" Style="font-weight: 700;" Class="mb-1">Atenção: Ação irreversível.</MudText>
+        <MudAlert Severity="Severity.Error" Class="mb-6" Elevation="0">
+            <MudText Typo="Typo.subtitle2" Class="mb-1">Atenção: Ação irreversível.</MudText>
             <MudText Typo="Typo.body2">
                 A exclusão destes dados removerá permanentemente a sua conta e as suas informações não poderão ser recuperadas.
             </MudText>
@@ -35,7 +35,7 @@
             {
                 <MudTextField @bind-Value="Input.Password"
                               For="@(() => Input.Password)"
-                              Name="Input.Password"
+                              name="Input.Password"
                               Label="Digite sua senha para confirmar"
                               InputType="InputType.Password"
                               Variant="Variant.Outlined"
@@ -48,7 +48,7 @@
                        Color="Color.Error"
                        Size="Size.Large"
                        Class="mud-width-full py-2"
-                       Style="font-weight: bold; border-radius: 4px;">
+                      >
                 Excluir dados e fechar minha conta
             </MudButton>
         </EditForm>

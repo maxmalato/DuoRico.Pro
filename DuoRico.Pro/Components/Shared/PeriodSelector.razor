@@ -1,41 +1,62 @@
-﻿@using System.Globalization
 @using DuoRico.Pro.Helpers
 
-<div class="period-selector d-flex gap-2 align-center">
-    <MudSelect T="int"
-               Value="@Month"
-               ValueChanged="OnMonthChanged"
-               Variant="Variant.Outlined"
-               Margin="Margin.Dense"
-               Dense="true"
-               Disabled="@IsLoading"
-               Style="min-width: 130px; background-color: white;">
-        @for (int i = 1; i <= 12; i++)
-        {
-            var month = i;
-            <MudSelectItem Value="@month">@DateHelpers.GetMonthName(month)</MudSelectItem>
-        }
-    </MudSelect>
+@* Navegador de período: ‹ Novembro 2026 ›. As setas trocam de mês; o rótulo abre um seletor de mês/ano. *@
+<div class="period-selector surface-card" @onkeydown="OnKeyDownAsync">
+    <MudIconButton Icon="@Icons.Material.Rounded.ChevronLeft"
+                   Size="Size.Small"
+                   Disabled="@IsLoading"
+                   OnClick="@(() => ShiftAsync(-1))"
+                   aria-label="Mês anterior" />
 
-    <MudSelect T="int"
-               Value="@Year"
-               ValueChanged="OnYearChanged"
-               Variant="Variant.Outlined"
-               Margin="Margin.Dense"
-               Dense="true"
-               Disabled="@IsLoading"
-               Style="width: 100px; background-color: white;">
-        @for (int i = DateTime.Now.Year - 2; i <= DateTime.Now.Year + 2; i++)
-        {
-            var year = i;
-            <MudSelectItem Value="@year">@year</MudSelectItem>
-        }
-    </MudSelect>
-    
-    @if (IsLoading)
-    {
-        <MudProgressCircular Color="Color.Primary" Size="Size.Small" Indeterminate="true" Class="ml-2" />
-    }
+    @* MudBlazor 9: ativador customizado precisa abrir o menu pelo MenuContext; posição padrão
+       (origens customizadas jogavam o popover para o canto e alargavam a página no mobile) *@
+    <MudMenu @ref="_menu"
+             Disabled="@IsLoading"
+             Class="period-selector-menu"
+             AriaLabel="Escolher mês">
+        <ActivatorContent>
+            <MudButton Variant="Variant.Text"
+                       Color="Color.Default"
+                       Disabled="@IsLoading"
+                       EndIcon="@Icons.Material.Rounded.ExpandMore"
+                       Class="period-selector-label"
+                       OnClick="@(e => OpenPickerAsync(context, e))">
+                @if (IsLoading)
+                {
+                    <MudProgressCircular Color="Color.Primary" Size="Size.Small" Indeterminate="true" Class="mr-2 period-selector-spinner" />
+                }
+                @DateHelpers.GetMonthName(Month) @Year
+            </MudButton>
+        </ActivatorContent>
+        <ChildContent>
+            <div class="period-picker" @onkeydown="OnKeyDownAsync">
+                <div class="period-picker-year">
+                    <MudIconButton Icon="@Icons.Material.Rounded.ChevronLeft" Size="Size.Small" OnClick="@(() => _pickerYear--)" aria-label="Ano anterior" />
+                    <MudText Typo="Typo.subtitle2">@_pickerYear</MudText>
+                    <MudIconButton Icon="@Icons.Material.Rounded.ChevronRight" Size="Size.Small" OnClick="@(() => _pickerYear++)" aria-label="Próximo ano" />
+                </div>
+                <div class="period-picker-grid">
+                    @for (int i = 1; i <= 12; i++)
+                    {
+                        var month = i;
+                        var selected = month == Month && _pickerYear == Year;
+                        <MudButton Size="Size.Small"
+                                   Variant="@(selected ? Variant.Filled : Variant.Text)"
+                                   Color="@(selected ? Color.Primary : Color.Default)"
+                                   OnClick="@(() => SelectAsync(month, _pickerYear))">
+                            @DateHelpers.GetMonthName(month)[..3]
+                        </MudButton>
+                    }
+                </div>
+            </div>
+        </ChildContent>
+    </MudMenu>
+
+    <MudIconButton Icon="@Icons.Material.Rounded.ChevronRight"
+                   Size="Size.Small"
+                   Disabled="@IsLoading"
+                   OnClick="@(() => ShiftAsync(1))"
+                   aria-label="Próximo mês" />
 </div>
 
 @code {
@@ -51,17 +72,35 @@
     [Parameter] public bool IsLoading { get; set; }
     [Parameter] public EventCallback OnFilterChanged { get; set; }
 
-    private async Task OnMonthChanged(int newMonth)
+    private MudMenu _menu = default!;
+    private int _pickerYear;
+
+    // A grade sempre abre no ano que está sendo exibido
+    private Task OpenPickerAsync(MenuContext menu, MouseEventArgs e)
     {
-        Month = newMonth;
-        await MonthChanged.InvokeAsync(newMonth); 
-        await OnFilterChanged.InvokeAsync();
+        _pickerYear = Year;
+        return menu.ToggleAsync(e);
     }
 
-    private async Task OnYearChanged(int newYear)
+    // Com ativador customizado o MudMenu não trata o Esc; fecha a grade sem trocar o período
+    private Task OnKeyDownAsync(KeyboardEventArgs e) =>
+        e.Key == "Escape" ? _menu.CloseMenuAsync() : Task.CompletedTask;
+
+    private Task ShiftAsync(int months)
     {
-        Year = newYear;
-        await YearChanged.InvokeAsync(newYear);
+        var date = new DateTime(Year, Month, 1).AddMonths(months);
+        return SelectAsync(date.Month, date.Year);
+    }
+
+    private async Task SelectAsync(int month, int year)
+    {
+        await _menu.CloseMenuAsync();
+        if (month == Month && year == Year) return;
+
+        Month = month;
+        Year = year;
+        await MonthChanged.InvokeAsync(month);
+        await YearChanged.InvokeAsync(year);
         await OnFilterChanged.InvokeAsync();
     }
 }

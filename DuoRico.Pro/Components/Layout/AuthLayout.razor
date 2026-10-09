@@ -1,17 +1,21 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+@using DuoRico.Pro.Services
 
-<MudThemeProvider Theme="@AppTheme.Default" />
+@inject ThemeService ThemeService
+
+@* Páginas de autenticação são SSR estático: o tema vem do cookie (ver ThemeService), sem JS do MudBlazor *@
+<MudThemeProvider Theme="@AppTheme.Default" IsDarkMode="@ThemeService.IsDarkMode" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<div class="d-flex align-center justify-center" style="background-color: #F4F6F8; min-height: 100vh;">
+<div class="auth-layout d-flex align-center justify-center">
     @Body
 </div>
 
 <script>
     window.addEventListener('submit', function() {
-        
+
         // Desativa o botão de submit e muda o texto
         var btn = document.querySelector('button[type="submit"]');
         if (btn) {
@@ -19,7 +23,7 @@
             btn.style.opacity = '0.8';
             btn.innerText = 'Aguarde...';
         }
-        
+
         // Desativa os links de ação
         var links = document.getElementById('actionLinks');
         if (links) {
@@ -54,4 +58,3 @@
         input.value = value;
     });
 </script>
-

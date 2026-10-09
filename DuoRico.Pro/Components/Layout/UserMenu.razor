@@ -1,0 +1,98 @@
+@using Microsoft.AspNetCore.Identity
+@using DuoRico.Pro.Data
+
+@implements IDisposable
+
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IServiceProvider ServiceProvider
+
+@if (InteractivePage)
+{
+    <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" AriaLabel="Menu do usuário">
+        <ActivatorContent>
+            @* MudBlazor 9: o ativador customizado abre o menu pelo MenuContext *@
+            <button type="button" class="user-menu-activator" aria-label="Menu do usuário" @onclick="@(e => context.ToggleAsync(e))">
+                <MudAvatar Color="Color.Primary" Size="Size.Small" Class="user-menu-avatar">@_initials</MudAvatar>
+            </button>
+        </ActivatorContent>
+        <ChildContent>
+            <div class="px-4 pt-3 pb-2">
+                <MudText Typo="Typo.subtitle2">@_name</MudText>
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">@_email</MudText>
+            </div>
+            <MudDivider Class="my-1" />
+            <MudMenuItem Href="Account/Manage" Icon="@Icons.Material.Rounded.ManageAccounts">Minha conta</MudMenuItem>
+            <form action="Account/Logout" method="post">
+                <AntiforgeryToken />
+                <input type="hidden" name="ReturnUrl" value="@_currentUrl" />
+                <button type="submit" class="user-menu-logout">
+                    <MudIcon Icon="@Icons.Material.Rounded.Logout" Color="Color.Error" Size="Size.Small" Class="mr-3" />
+                    <MudText Typo="Typo.body2" Color="Color.Error">Sair</MudText>
+                </button>
+            </form>
+        </ChildContent>
+    </MudMenu>
+}
+else
+{
+    @* SSR estático (páginas de conta): o MudMenu não abre sem interatividade; o avatar vira link para a conta *@
+    <a href="Account/Manage" aria-label="Minha conta" title="@_name">
+        <MudAvatar Color="Color.Primary" Size="Size.Small" Class="user-menu-avatar">@_initials</MudAvatar>
+    </a>
+}
+
+@code {
+    [CascadingParameter(Name = "InteractivePage")] private bool InteractivePage { get; set; }
+
+    private string? _currentUrl;
+    private string _name = "";
+    private string _email = "";
+    private string _initials = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+
+        var user = (await AuthStateProvider.GetAuthenticationStateAsync()).User;
+
+        if (user.Identity?.IsAuthenticated != true)
+        {
+            return;
+        }
+
+        _email = user.Identity.Name ?? "";
+        _name = _email;
+
+        using var scope = ServiceProvider.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var appUser = await userManager.GetUserAsync(user);
+
+        var nameParts = (appUser?.Name ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        if (nameParts.Length > 0)
+        {
+            // Primeiro e último nome, como já era exibido no menu lateral
+            _name = nameParts.Length == 1 ? nameParts[0] : $"{nameParts[0]} {nameParts[^1]}";
+            _initials = nameParts.Length == 1
+                ? nameParts[0][..1].ToUpperInvariant()
+                : $"{nameParts[0][0]}{nameParts[^1][0]}".ToUpperInvariant();
+        }
+        else if (_email.Length > 0)
+        {
+            _initials = _email[..1].ToUpperInvariant();
+        }
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        _currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}

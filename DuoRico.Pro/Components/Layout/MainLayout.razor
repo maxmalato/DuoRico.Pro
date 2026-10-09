@@ -1,42 +1,72 @@
-﻿@inherits LayoutComponentBase
-@inject NavigationManager NavigationManager
+@inherits LayoutComponentBase
+@using DuoRico.Pro.Services
 
-<MudThemeProvider Theme="@AppTheme.Default" />
+@inject ThemeService ThemeService
+@inject IJSRuntime JS
+
+<MudThemeProvider @ref="_themeProvider" Theme="@AppTheme.Default" IsDarkMode="@ThemeService.IsDarkMode" />
 <MudDialogProvider />
 <MudSnackbarProvider />
 <MudPopoverProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="1" Color="Color.Primary">
-        <MudIconButton>
-            @if (NavigationManager.Uri.Contains("/Account/Manage", StringComparison.OrdinalIgnoreCase))
-            {
-                <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Color="Color.Inherit" Edge="Edge.Start" Href="/dashboard" />
-            }
-            else
-            {
-                <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@(DrawerToggle)" />
-            }
-        </MudIconButton>
-        <img src="favicon.png" alt="" class="appbar-brand-logo ml-3" />
-        <MudText Typo="Typo.h6" Class="ml-2 appbar-brand-name" Style="font-weight: 700;">
-            DUO RICO PRO
-        </MudText>
+    <MudAppBar Elevation="0" Class="app-bar">
+        @* Mobile usa o BottomNav; o botão de menu só existe a partir do tablet (e em páginas interativas) *@
+        @if (InteractivePage)
+        {
+            <MudIconButton Icon="@Icons.Material.Rounded.Menu"
+                           Color="Color.Inherit"
+                           Edge="Edge.Start"
+                           OnClick="@DrawerToggle"
+                           Class="hide-xs"
+                           aria-label="Alternar menu" />
+        }
+
+        <a href="dashboard" class="app-brand">
+            <img src="favicon.png" alt="" class="app-brand-logo" />
+            <span class="app-brand-name">Duo Rico <span class="app-brand-pro">Pro</span></span>
+        </a>
+
         <MudSpacer />
+
+        @if (InteractivePage)
+        {
+            <MudTooltip Text="@(ThemeService.IsDarkMode ? "Tema claro" : "Tema escuro")">
+                <MudIconButton Icon="@(ThemeService.IsDarkMode ? Icons.Material.Rounded.LightMode : Icons.Material.Rounded.DarkMode)"
+                               Color="Color.Inherit"
+                               OnClick="@ToggleDarkModeAsync"
+                               aria-label="Alternar tema claro/escuro" />
+            </MudTooltip>
+        }
+
+        <AuthorizeView>
+            <Authorized>
+                <UserMenu />
+            </Authorized>
+        </AuthorizeView>
     </MudAppBar>
 
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="2" ClipMode="DrawerClipMode.Always">
-        <div>
-            <NavMenu />
-        </div>
+    <MudDrawer @bind-Open="_drawerOpen"
+               Variant="DrawerVariant.Responsive"
+               Breakpoint="Breakpoint.Md"
+               ClipMode="DrawerClipMode.Always"
+               Elevation="0"
+               Class="app-drawer">
+        <NavMenu />
     </MudDrawer>
 
-    <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6">
+    <MudMainContent Class="app-main">
+        <MudContainer MaxWidth="MaxWidth.Large" Class="app-container">
             @Body
         </MudContainer>
     </MudMainContent>
 </MudLayout>
+
+<AuthorizeView>
+    <Authorized>
+        <BottomNav />
+    </Authorized>
+</AuthorizeView>
 
 <div id="blazor-error-ui" data-nosnippet>
     Ocorreu um erro não tratado.
@@ -45,7 +75,37 @@
 </div>
 
 @code {
+    [CascadingParameter(Name = "InteractivePage")] private bool InteractivePage { get; set; }
+
+    private MudThemeProvider _themeProvider = default!;
     private bool _drawerOpen = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Sem escolha explícita do usuário, acompanha o tema do sistema (inclusive se mudar com a página aberta)
+        if (firstRender && ThemeService.FollowsSystem)
+        {
+            await _themeProvider.WatchSystemDarkModeAsync(OnSystemDarkModeChangedAsync);
+            await OnSystemDarkModeChangedAsync(await _themeProvider.GetSystemDarkModeAsync());
+        }
+    }
+
+    private Task OnSystemDarkModeChangedAsync(bool isDarkMode)
+    {
+        if (ThemeService.FollowsSystem && ThemeService.IsDarkMode != isDarkMode)
+        {
+            ThemeService.SetSystemDarkMode(isDarkMode);
+            StateHasChanged();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private async Task ToggleDarkModeAsync()
+    {
+        ThemeService.SetPreference(!ThemeService.IsDarkMode);
+        await JS.InvokeVoidAsync("duoTheme.setPreference", ThemeService.Preference);
+    }
 
     private void DrawerToggle()
     {

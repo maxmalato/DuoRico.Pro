@@ -10,7 +10,7 @@
 
 <PageTitle>Segurança (2FA) - Duo Rico Pro</PageTitle>
 
-<MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Class="mb-6">Autenticação de Dois Fatores (2FA)</MudText>
+<MudText Typo="Typo.h5" Color="Color.Dark" Class="mb-6">Autenticação de Dois Fatores (2FA)</MudText>
 
 <StatusMessage />
 
@@ -20,8 +20,8 @@
     {
         if (recoveryCodesLeft == 0)
         {
-            <MudAlert Severity="Severity.Error" Class="mb-6" Elevation="1">
-                <MudText Typo="Typo.subtitle2" Style="font-weight: 700;">Você não tem mais códigos de recuperação.</MudText>
+            <MudAlert Severity="Severity.Error" Class="mb-6" Elevation="0">
+                <MudText Typo="Typo.subtitle2">Você não tem mais códigos de recuperação.</MudText>
                 <MudText Typo="Typo.body2">
                     Você deve <MudLink Href="Account/Manage/GenerateRecoveryCodes" Color="Color.Inherit" Underline="Underline.Always">gerar um novo conjunto</MudLink> antes de poder fazer login com um código de recuperação.
                 </MudText>
@@ -29,8 +29,8 @@
         }
         else if (recoveryCodesLeft == 1)
         {
-            <MudAlert Severity="Severity.Error" Class="mb-6" Elevation="1">
-                <MudText Typo="Typo.subtitle2" Style="font-weight: 700;">Você tem apenas 1 código de recuperação restante.</MudText>
+            <MudAlert Severity="Severity.Error" Class="mb-6" Elevation="0">
+                <MudText Typo="Typo.subtitle2">Você tem apenas 1 código de recuperação restante.</MudText>
                 <MudText Typo="Typo.body2">
                     Você pode <MudLink Href="Account/Manage/GenerateRecoveryCodes" Color="Color.Inherit" Underline="Underline.Always">gerar um novo conjunto de códigos de recuperação</MudLink>.
                 </MudText>
@@ -38,8 +38,8 @@
         }
         else if (recoveryCodesLeft <= 3)
         {
-            <MudAlert Severity="Severity.Warning" Class="mb-6" Elevation="1">
-                <MudText Typo="Typo.subtitle2" Style="font-weight: 700;">Você tem apenas @recoveryCodesLeft códigos de recuperação restantes.</MudText>
+            <MudAlert Severity="Severity.Warning" Class="mb-6" Elevation="0">
+                <MudText Typo="Typo.subtitle2">Você tem apenas @recoveryCodesLeft códigos de recuperação restantes.</MudText>
                 <MudText Typo="Typo.body2">
                     Você deve <MudLink Href="Account/Manage/GenerateRecoveryCodes" Color="Color.Inherit" Underline="Underline.Always">gerar um novo conjunto de códigos de recuperação</MudLink>.
                 </MudText>
@@ -66,7 +66,7 @@
         </div>
     }
 
-    <MudText Typo="Typo.h6" Style="font-weight: 700;" Color="Color.Dark" Class="mb-4">Aplicativo Autenticador</MudText>
+    <MudText Typo="Typo.h6" Color="Color.Dark" Class="mb-4">Aplicativo Autenticador</MudText>
 
     <div class="d-flex flex-wrap gap-3">
         @if (!hasAuthenticator)
@@ -75,7 +75,7 @@
                        Variant="Variant.Filled"
                        Color="Color.Primary"
                        StartIcon="@Icons.Material.Filled.QrCodeScanner"
-                       Style="font-weight: 600;">
+                      >
                 Adicionar aplicativo autenticador
             </MudButton>
         }
@@ -85,7 +85,7 @@
                        Variant="Variant.Filled"
                        Color="Color.Primary"
                        StartIcon="@Icons.Material.Filled.Settings"
-                       Style="font-weight: 600;">
+                      >
                 Configurar aplicativo autenticador
             </MudButton>
             <MudButton Href="Account/Manage/ResetAuthenticator"
@@ -100,7 +100,7 @@
 else
 {
     <MudAlert Severity="Severity.Error" Class="mb-4">
-        <MudText Typo="Typo.subtitle2" Style="font-weight: 700;">A política de privacidade e cookies não foi aceita.</MudText>
+        <MudText Typo="Typo.subtitle2">A política de privacidade e cookies não foi aceita.</MudText>
         <MudText Typo="Typo.body2">Você deve aceitar a política de rastreamento antes de poder ativar a autenticação de dois fatores.</MudText>
     </MudAlert>
 }

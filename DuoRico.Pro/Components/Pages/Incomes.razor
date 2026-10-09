@@ -1,4 +1,4 @@
-﻿@page "/incomes"
+@page "/incomes"
 
 @using DuoRico.Pro.Components.Shared
 @using DuoRico.Pro.Models
@@ -8,9 +8,7 @@
 
 <PageTitle>Duo Rico Pro - Receitas</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6 mb-8">
-    <TransactionTable Type="TransactionType.Income"
-                      ThemeColor="Color.Success" 
-                      PageTitle="Receitas"
-                      Icon="Icons.Material.Outlined.ArrowCircleUp" />
-</MudContainer>
+<TransactionTable Type="TransactionType.Income"
+                  ThemeColor="Color.Success"
+                  PageTitle="Receitas"
+                  Icon="@Icons.Material.Rounded.TrendingUp" />

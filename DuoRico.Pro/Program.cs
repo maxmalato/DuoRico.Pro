@@ -118,6 +118,7 @@ else
 }
 
 builder.Services.AddMudServices();
+builder.Services.AddScoped<ThemeService>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 

@@ -20,14 +20,14 @@
 }
 else
 {
-    <MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Class="mb-6">Configurar Autenticador (2FA)</MudText>
+    <MudText Typo="Typo.h5" Color="Color.Dark" Class="mb-6">Configurar Autenticador (2FA)</MudText>
 
     <StatusMessage Message="@message" />
 
     <MudGrid>
         <MudItem xs="12" md="8">
-            <MudPaper Elevation="1" Class="pa-6 rounded-lg mb-6">
-                <MudText Typo="Typo.h6" Style="font-weight: 700;" Class="mb-4">1. Configure o Aplicativo</MudText>
+            <MudPaper Elevation="0" Outlined="true" Class="pa-6 mb-6">
+                <MudText Typo="Typo.h6" Class="mb-4">1. Configure o Aplicativo</MudText>
                 <MudText Typo="Typo.body2" Class="mb-4">
                     Baixe um aplicativo autenticador na loja do seu dispositivo (como o Google Authenticator ou Authy).
                 </MudText>
@@ -53,8 +53,8 @@ else
                 </MudAlert>
             </MudPaper>
 
-            <MudPaper Elevation="1" Class="pa-6 rounded-lg mb-6">
-                <MudText Typo="Typo.h6" Style="font-weight: 700;" Class="mb-4">2. Valide o Código</MudText>
+            <MudPaper Elevation="0" Outlined="true" Class="pa-6 mb-6">
+                <MudText Typo="Typo.h6" Class="mb-4">2. Valide o Código</MudText>
                 <MudText Typo="Typo.body2" Class="mb-4">
                     Após escanear o QR Code, seu aplicativo fornecerá um código de 6 dígitos. Digite esse código abaixo para confirmar.
                 </MudText>
@@ -65,7 +65,7 @@ else
 
                     <MudTextField @bind-Value="Input.Code"
                                   For="@(() => Input.Code)"
-                                  Name="Input.Code"
+                                  name="Input.Code"
                                   Label="Código de Verificação"
                                   Placeholder="123456"
                                   Variant="Variant.Outlined"
@@ -77,7 +77,7 @@ else
                                Color="Color.Primary"
                                Size="Size.Large"
                                Class="mud-width-full py-2"
-                               Style="font-weight: bold; border-radius: 4px;">
+                              >
                         Verificar e Ativar
                     </MudButton>
                 </EditForm>

@@ -1,42 +1,50 @@
 @using DuoRico.Pro.Models
 @using System.Globalization
 
-<MudCard Elevation="2" Class="pa-5 rounded-lg mb-8">
-    <div class="d-flex flex-column flex-sm-row justify-space-between align-start align-sm-center mb-2 gap-2">
-        <div class="d-flex align-center gap-2">
-            <MudIcon Icon="@Icons.Material.Filled.CreditScore" Color="Color.Primary" Size="Size.Large"/>
-            <MudText Typo="Typo.h6" Style="font-weight: 700;">Uso do cartão</MudText>
+<section class="surface-card pa-4 pa-sm-5 mb-6" aria-labelledby="card-usage-title">
+    <div class="d-flex flex-wrap align-center justify-space-between gap-3 mb-3">
+        <div class="d-flex align-center gap-3">
+            <span class="page-header-icon tonal-primary">
+                <MudIcon Icon="@Icons.Material.Rounded.CreditCard" />
+            </span>
+            <div>
+                <MudText Typo="Typo.h6" id="card-usage-title">Uso do cartão</MudText>
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">Limite seguro: 10% da receita do mês</MudText>
+            </div>
         </div>
 
-        <MudAvatar Color="@_statusColor" Size="Size.Small">
-            <MudIcon Icon="@_statusIcon" Color="Color.Inherit" Size="Size.Small"/>
-        </MudAvatar>
+        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@_statusColor" Icon="@_statusIcon" Class="ma-0">
+            @_statusLabel
+        </MudChip>
     </div>
 
-    <MudText Typo="Typo.body2" Color="Color.Default" Class="mb-4">
-        Seu limite seguro é de 10% da sua receita mensal.
+    <div class="d-flex align-baseline flex-wrap gap-1 mb-2">
+        <span class="kpi-value">@_creditCardTotal.ToString("C", _culture)</span>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">de @_creditCardLimit.ToString("C", _culture)</MudText>
+    </div>
+
+    <MudProgressLinear Color="@_statusColor"
+                       Value="@Math.Min(_progressBarValue, 100)"
+                       Rounded="true"
+                       Size="Size.Large"
+                       Class="card-usage-bar"
+                       aria-label="@($"{_progressBarValue:F0}% do limite seguro usado")" />
+
+    <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mt-2">
+        @if (_creditCardLimit <= 0 && _creditCardTotal > 0)
+        {
+            @:Sem receita no mês para calcular o limite.
+        }
+        else if (_progressBarValue > 100)
+        {
+            @($"{_progressBarValue:F0}% do limite · {(_creditCardTotal - _creditCardLimit).ToString("C", _culture)} acima")
+        }
+        else
+        {
+            @($"{_progressBarValue:F0}% do limite · {(_creditCardLimit - _creditCardTotal).ToString("C", _culture)} disponíveis")
+        }
     </MudText>
-
-    @{
-        var visualBarFill = Math.Min(_progressBarValue, 100);
-    }
-
-    <MudProgressLinear Color="@_statusColor" Value="@visualBarFill" Size="Size.Large" Class="rounded-lg"
-                       Style="height: 24px;">
-        <MudText Typo="Typo.subtitle2" Style="font-weight: 700; color: white">
-            @_progressBarValue.ToString("F0")%
-        </MudText>
-    </MudProgressLinear>
-
-    <div class="d-flex justify-space-between mt-2">
-        <MudText Typo="Typo.caption" Color="Color.Dark" Style="font-weight: 600;">
-            Total gasto: @_creditCardTotal.ToString("C", _culture)
-        </MudText>
-        <MudText Typo="Typo.caption" Color="Color.Default">
-            Limite seguro: @_creditCardLimit.ToString("C", _culture)
-        </MudText>
-    </div>
-</MudCard>
+</section>
 
 @code {
 
@@ -47,10 +55,10 @@
     // Variáveis internas para cálculo
     private decimal _creditCardTotal = 0;
     private decimal _creditCardLimit = 0;
-    private double _percentageUsed = 0;
     private double _progressBarValue = 0;
     private Color _statusColor = Color.Success;
-    private string _statusIcon = Icons.Material.Filled.CheckCircle;
+    private string _statusIcon = Icons.Material.Rounded.CheckCircle;
+    private string _statusLabel = "";
     private CultureInfo _culture = CultureInfo.GetCultureInfo("pt-BR");
 
     // Sempre que o Dashboard passar dados novos, esse método recalcula tudo
@@ -65,20 +73,19 @@
 
         if (TotalIncome > 0)
         {
-            _percentageUsed = (double)(_creditCardTotal / TotalIncome) * 100;
             _progressBarValue = (double)(_creditCardTotal / _creditCardLimit) * 100;
         }
         else
         {
-            _percentageUsed = _creditCardTotal > 0 ? 100 : 0;
             _progressBarValue = _creditCardTotal > 0 ? 100 : 0;
         }
 
-        (_statusColor, _statusIcon) = _progressBarValue switch
+        (_statusColor, _statusIcon, _statusLabel) = _progressBarValue switch
         {
-            <= 70 => (Color.Success, Icons.Material.Filled.CheckCircle),
-            > 70 and <= 90 => (Color.Warning, Icons.Material.Filled.WarningAmber),
-            _ => (Color.Error, Icons.Material.Filled.Error)
+            <= 70 => (Color.Success, Icons.Material.Rounded.CheckCircle, "Tranquilo"),
+            > 70 and <= 90 => (Color.Warning, Icons.Material.Rounded.WarningAmber, "Atenção"),
+            > 90 and <= 100 => (Color.Error, Icons.Material.Rounded.Error, "No limite"),
+            _ => (Color.Error, Icons.Material.Rounded.Error, "Acima do limite")
         };
     }
 

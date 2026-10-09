@@ -1,8 +1,13 @@
-﻿@page "/Account/AccessDenied"
+@page "/Account/AccessDenied"
 
-<PageTitle>Access denied</PageTitle>
+@layout DuoRico.Pro.Components.Layout.AuthLayout
 
-<header>
-    <MudText Typo="Typo.h4" Color="Color.Error" Class="mb-2">Acesso negado</MudText>
-    <MudText Typo="Typo.body1" Color="Color.Error">Você não tem acesso a este recurso.</MudText>
-</header>
+<PageTitle>Acesso negado - Duo Rico Pro</PageTitle>
+
+<AuthMessageCard Title="Acesso negado"
+                 Icon="@Icons.Material.Rounded.Block"
+                 IconColor="Color.Error"
+                 ActionHref="dashboard"
+                 ActionText="Voltar ao início">
+    Você não tem acesso a este recurso.
+</AuthMessageCard>

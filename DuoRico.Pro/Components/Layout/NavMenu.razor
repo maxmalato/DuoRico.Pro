@@ -1,117 +1,19 @@
-﻿@using Microsoft.AspNetCore.Identity
-@using DuoRico.Pro.Data
-
-@implements IDisposable
-
-@inject NavigationManager NavigationManager
-@inject AuthenticationStateProvider AuthStateProvider
-@inject IServiceProvider ServiceProvider
-
-<MudNavMenu Rounded="true" Margin="Margin.Dense" Class="pa-2">
+@* Navegação principal (drawer em tablet/desktop). No mobile o equivalente é o BottomNav. *@
+<MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Primary" Class="app-nav pa-3">
     <AuthorizeView>
         <Authorized>
-            <MudNavLink Href="/dashboard" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home" IconColor="Color.Primary">
-                <MudText Typo="Typo.subtitle1" Class="fw-semibold" Color="Color.Dark">
-                    Dashboard
-                </MudText>
-            </MudNavLink>
+            <MudText Typo="Typo.overline" Class="app-nav-section">Visão geral</MudText>
+            <MudNavLink Href="dashboard" Match="NavLinkMatch.All" Icon="@Icons.Material.Rounded.SpaceDashboard">Início</MudNavLink>
+            <MudNavLink Href="incomes" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Rounded.TrendingUp">Receitas</MudNavLink>
+            <MudNavLink Href="expenses" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Rounded.TrendingDown">Despesas</MudNavLink>
 
-            <MudDivider DividerType="DividerType.Middle" />
-
-            <MudNavLink Href="/incomes" Icon="@Icons.Material.Filled.ArrowUpward" IconColor="Color.Success">
-                <MudText Typo="Typo.subtitle1" Color="Color.Dark">
-                    Receitas
-                </MudText>
-            </MudNavLink>
-
-            <MudNavLink Href="/expenses" Icon="@Icons.Material.Filled.ArrowDownward" IconColor="Color.Error">
-                <MudText Typo="Typo.subtitle1" Color="Color.Dark">
-                    Despesas
-                </MudText>
-            </MudNavLink>
-
-            <MudDivider DividerType="DividerType.Middle" Class="my-2" />
-
-            <MudNavLink Href="Account/Manage" Icon="@Icons.Material.Filled.AccountCircle">
-                <MudText>@(string.IsNullOrWhiteSpace(_name) ? context.User.Identity?.Name : _name)</MudText>
-            </MudNavLink>
-            <form action="Account/Logout" method="post" class="mud-width-full">
-                <AntiforgeryToken />
-
-                <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-
-                <MudButton ButtonType="ButtonType.Submit"
-                           Variant="Variant.Text"
-                           Color="Color.Error"
-                           FullWidth="true"
-                           StartIcon="@Icons.Material.Filled.Logout"
-                           Class="justify-start px-6 py-2"
-                           Style="text-transform: none;">
-                    <MudText Typo="Typo.subtitle1">Sair</MudText>
-                </MudButton>
-            </form>
+            <MudText Typo="Typo.overline" Class="app-nav-section mt-4">Conta</MudText>
+            <MudNavLink Href="Account/Manage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Rounded.ManageAccounts">Minha conta</MudNavLink>
         </Authorized>
 
         <NotAuthorized>
-            <MudNavLink Href="/register" Icon="@Icons.Material.Filled.PersonAdd">
-                Registrar
-            </MudNavLink>
-            <MudNavLink Href="/login" Icon="@Icons.Material.Filled.Login">
-                Entrar
-            </MudNavLink>
+            <MudNavLink Href="login" Icon="@Icons.Material.Rounded.Login">Entrar</MudNavLink>
+            <MudNavLink Href="register" Icon="@Icons.Material.Rounded.PersonAdd">Criar conta</MudNavLink>
         </NotAuthorized>
     </AuthorizeView>
 </MudNavMenu>
-
-@code {
-    private string? currentUrl;
-    private string? _name = "";
-
-    protected override async Task OnInitializedAsync()
-    {
-        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
-        NavigationManager.LocationChanged += OnLocationChanged;
-
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-
-        if (user.Identity?.IsAuthenticated == true)
-        {
-            using var scope = ServiceProvider.CreateScope();
-            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-
-            var appUser = await userManager.GetUserAsync(user);
-
-            if (appUser != null)
-            {
-                var fullName = appUser.Name;
-
-                if (!string.IsNullOrEmpty(fullName))
-                {
-                    var nameParts = fullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
-                    if (nameParts.Length == 1)
-                    {
-                        _name = nameParts[0];
-
-                    }
-                    else if (nameParts.Length > 1)
-                    {
-                        _name = $"{nameParts[0]} {nameParts[^1]}";
-                    }
-                }
-            }
-        }
-    }
-
-    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
-    {
-        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
-        StateHasChanged();
-    }
-
-    public void Dispose()
-    {
-        NavigationManager.LocationChanged -= OnLocationChanged;
-    }
-}

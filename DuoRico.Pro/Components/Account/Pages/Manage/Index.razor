@@ -12,7 +12,7 @@
 
 <PageTitle>Perfil - Duo Rico Pro</PageTitle>
 
-<MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Class="mb-6">Meu Perfil</MudText>
+<MudText Typo="Typo.h5" Color="Color.Dark" Class="mb-6">Meu Perfil</MudText>
 
 <StatusMessage />
 
@@ -33,7 +33,7 @@
             @* Nome *@
             <MudTextField @bind-Value="Input.Name"
                           For="@(() => Input.Name)"
-                          Name="Input.Name"
+                          name="Input.Name"
                           Label="Nome Completo"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
@@ -42,7 +42,7 @@
             @* ID do casal *@
             <MudTextField @bind-Value="Input.CoupleId"
                           For="@(() => Input.CoupleId)"
-                          Name="Input.CoupleId"
+                          name="Input.CoupleId"
                           Label="ID do Casal (Copie o ID do seu parceiro para vincular)"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
@@ -51,7 +51,7 @@
             @* Telefone *@
             <MudTextField @bind-Value="Input.PhoneNumber"
                           For="@(() => Input.PhoneNumber)"
-                          Name="Input.PhoneNumber"
+                          name="Input.PhoneNumber"
                           Label="Telefone"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
@@ -62,7 +62,7 @@
                        Color="Color.Primary"
                        Size="Size.Large"
                        Class="mud-width-full py-2"
-                       Style="font-weight: bold; border-radius: 4px;">
+                      >
                 Salvar Alterações
             </MudButton>
 

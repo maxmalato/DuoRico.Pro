@@ -1,0 +1,30 @@
+@* Cartão de mensagem das telas de conta (confirmações, erros, bloqueio). Usado dentro do AuthLayout. *@
+<MudContainer MaxWidth="MaxWidth.Small" Class="py-8 px-0">
+    <div class="surface-card auth-message-card">
+        <span class="empty-state-icon tonal-@IconColor.ToString().ToLowerInvariant()">
+            <MudIcon Icon="@Icon" Size="Size.Large" />
+        </span>
+
+        <MudText Typo="Typo.h5" Class="mb-2">@Title</MudText>
+
+        <div class="mud-text-secondary mb-6">
+            @ChildContent
+        </div>
+
+        @if (!string.IsNullOrEmpty(ActionHref))
+        {
+            <MudButton Href="@ActionHref" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Size="Size.Large">
+                @ActionText
+            </MudButton>
+        }
+    </div>
+</MudContainer>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string Icon { get; set; } = Icons.Material.Rounded.Info;
+    [Parameter] public Color IconColor { get; set; } = Color.Primary;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string? ActionHref { get; set; } = "login";
+    [Parameter] public string ActionText { get; set; } = "Ir para o login";
+}

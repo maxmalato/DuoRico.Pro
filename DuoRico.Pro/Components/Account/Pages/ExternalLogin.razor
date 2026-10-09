@@ -1,5 +1,7 @@
 ﻿@page "/Account/ExternalLogin"
 
+@layout DuoRico.Pro.Components.Layout.AuthLayout
+
 @using System.ComponentModel.DataAnnotations
 @using System.Security.Claims
 @using System.Text
@@ -16,39 +18,36 @@
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<ExternalLogin> Logger
 
-<PageTitle>Register</PageTitle>
+<PageTitle>Criar conta - Duo Rico Pro</PageTitle>
 
-<StatusMessage Message="@message" />
-<MudText Typo="Typo.h5" Style="font-weight: 700;" Color="Color.Dark" Class="mb-2">Register</MudText>
-<MudText Typo="Typo.subtitle1" Class="mb-4">Associate your @ProviderDisplayName account.</MudText>
-<MudDivider Class="mb-6" />
+<MudContainer MaxWidth="MaxWidth.Small" Class="py-8 px-0">
+    <div class="surface-card pa-6 pa-sm-8">
+        <StatusMessage Message="@message" />
+        <MudText Typo="Typo.h5" Class="mb-1">Criar conta</MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-6">Vincule sua conta @ProviderDisplayName.</MudText>
 
-<MudAlert Severity="Severity.Info" Elevation="0" Class="mb-6">
-    You've successfully authenticated with <strong>@ProviderDisplayName</strong>.
-    Please enter an email address for this site below and click the Register button to finish
-    logging in.
-</MudAlert>
+        <MudAlert Severity="Severity.Info" Elevation="0" Dense="true" Class="mb-6">
+            Você entrou com <strong>@ProviderDisplayName</strong>. Informe um e-mail para concluir o cadastro.
+        </MudAlert>
 
-<MudGrid>
-    <MudItem xs="12" sm="8" md="4">
         <EditForm Model="Input" OnValidSubmit="OnValidSubmitAsync" FormName="confirmation" method="post">
             <DataAnnotationsValidator />
             <ValidationSummary class="mud-error-text mb-4" role="alert" />
 
             <div class="d-flex flex-column gap-4">
                 <div class="auth-field">
-                    <InputText @bind-Value="Input.Email" id="Input.Email" class="auth-input" autocomplete="email" placeholder="Please enter your email." />
-                    <label for="Input.Email" class="auth-label">Email</label>
+                    <InputText @bind-Value="Input.Email" id="Input.Email" class="auth-input" autocomplete="email" placeholder="seu@email.com" />
+                    <label for="Input.Email" class="auth-label">E-mail</label>
                     <ValidationMessage For="() => Input.Email" class="auth-field-error" />
                 </div>
 
-                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" Class="mud-width-full py-2" Style="font-weight: bold;">
-                    Register
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true">
+                    Criar conta
                 </MudButton>
             </div>
         </EditForm>
-    </MudItem>
-</MudGrid>
+    </div>
+</MudContainer>
 
 @code {
     public const string LoginCallbackAction = "LoginCallback";

@@ -1,26 +1,19 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 @layout DuoRico.Pro.Components.Layout.MainLayout
 
-<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6 mb-8">
-    <div class="d-flex gap-2">
-        <MudIcon Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Primary" Size="Size.Large" Class="mb-2" />
-        <MudText Typo="Typo.h4" Style="font-weight: 700; color: slategray" Class="mb-2">Gerenciar sua conta</MudText>
-    </div>
-    <MudText Typo="Typo.body1" Class="mb-6">Altere suas configurações de perfil e segurança</MudText>
+<PageHeader Title="Minha conta"
+            Subtitle="Perfil, segurança e dados pessoais"
+            Icon="@Icons.Material.Rounded.ManageAccounts" />
 
-    <MudDivider Class="mb-6" />
+<MudGrid Spacing="4">
+    @* Menu: vertical no desktop, abas roláveis no mobile/tablet (ver ManageNavMenu) *@
+    <MudItem xs="12" md="3">
+        <ManageNavMenu />
+    </MudItem>
 
-    <MudGrid>
-        @* Menu Lateral Responsivo *@
-        <MudItem xs="12" md="3">
-            <ManageNavMenu />
-        </MudItem>
-
-        @* Área de Conteúdo Central *@
-        <MudItem xs="12" md="9">
-            <MudPaper Elevation="2" Class="pa-6 pa-sm-8 rounded-lg" Style="border: 1px solid var(--mud-palette-lines-default);">
-                @Body
-            </MudPaper>
-        </MudItem>
-    </MudGrid>
-</MudContainer>
+    <MudItem xs="12" md="9">
+        <div class="surface-card pa-5 pa-sm-8">
+            @Body
+        </div>
+    </MudItem>
+</MudGrid>

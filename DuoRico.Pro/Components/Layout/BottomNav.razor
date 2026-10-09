@@ -1,0 +1,23 @@
+@* Navegação inferior do mobile (até 599px). O CSS (app.css, .bottom-nav) a esconde nas telas maiores,
+   sem depender de JS, então já aparece certa na renderização inicial. *@
+<nav class="bottom-nav" aria-label="Navegação principal">
+    @foreach (var item in Items)
+    {
+        <NavLink href="@item.Href" class="bottom-nav-item" ActiveClass="active" Match="NavLinkMatch.Prefix">
+            <MudIcon Icon="@item.Icon" Size="Size.Medium" />
+            <span>@item.Label</span>
+        </NavLink>
+    }
+</nav>
+
+@code {
+    private sealed record NavItem(string Href, string Icon, string Label);
+
+    private static readonly NavItem[] Items =
+    [
+        new("dashboard", Icons.Material.Rounded.SpaceDashboard, "Início"),
+        new("incomes", Icons.Material.Rounded.TrendingUp, "Receitas"),
+        new("expenses", Icons.Material.Rounded.TrendingDown, "Despesas"),
+        new("Account/Manage", Icons.Material.Rounded.ManageAccounts, "Conta")
+    ];
+}

@@ -1,7 +1,12 @@
-﻿@page "/Account/InvalidUser"
+@page "/Account/InvalidUser"
 
-<PageTitle>Usuário inválido</PageTitle>
+@layout DuoRico.Pro.Components.Layout.AuthLayout
 
-<h3>Usuário inválido</h3>
+<PageTitle>Usuário inválido - Duo Rico Pro</PageTitle>
 
-<StatusMessage />
+<AuthMessageCard Title="Usuário inválido"
+                 Icon="@Icons.Material.Rounded.PersonOff"
+                 IconColor="Color.Error">
+    <StatusMessage />
+    Não foi possível carregar os dados deste usuário. Entre novamente para continuar.
+</AuthMessageCard>

@@ -1,0 +1,26 @@
+@using DuoRico.Pro.Models
+
+@* Situação do lançamento (Pago/Recebido x Pendente), igual em todas as telas.
+   Com OnClick, vira um botão que alterna o status. *@
+<MudChip T="string"
+         Size="Size.Small"
+         Variant="Variant.Text"
+         Color="@(IsPaid ? Color.Success : Color.Warning)"
+         Icon="@(IsPaid ? Icons.Material.Rounded.CheckCircle : Icons.Material.Rounded.Schedule)"
+         OnClick="@(OnClick.HasDelegate ? OnClick : default)"
+         Disabled="@Disabled"
+         Class="status-chip ma-0"
+         title="@(OnClick.HasDelegate ? "Clique para alterar o status" : null)">
+    @Label
+</MudChip>
+
+@code {
+    [Parameter] public bool IsPaid { get; set; }
+    [Parameter] public TransactionType Type { get; set; } = TransactionType.Expense;
+    [Parameter] public EventCallback OnClick { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    private string Label => IsPaid
+        ? (Type == TransactionType.Income ? "Recebido" : "Pago")
+        : "Pendente";
+}
