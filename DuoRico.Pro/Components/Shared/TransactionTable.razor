@@ -11,6 +11,7 @@
 @inject IDialogService DialogService
 @inject IBrowserViewportService BrowserViewport
 @inject ISnackbar Snackbar
+@inject ILogger<TransactionTable> Logger
 
 <PageHeader Title="@PageTitle" Subtitle="@($"{DateHelpers.GetMonthName(_selectedMonth)} de {_selectedYear}")" Icon="@Icon" IconColor="@ThemeColor">
     <Actions>
@@ -346,7 +347,9 @@
             }
             catch (Exception ex)
             {
-                Snackbar.Add($"Ocorreu um erro inesperado: {ex.Message}", Severity.Error);
+                // Detalhes só no log: a mensagem da exceção pode expor estrutura interna (banco, consultas)
+                Logger.LogError(ex, "Falha ao criar transação para o casal {CoupleId}.", _currentCoupleId);
+                Snackbar.Add("Não foi possível salvar. Tente novamente.", Severity.Error);
             }
         }
     }

@@ -32,6 +32,13 @@
 
         <StatusMessage Message="@errorMessage" Severity="Severity.Error" />
 
+        @if (showResendConfirmation)
+        {
+            <MudText Typo="Typo.body2" Align="Align.Center" Class="mb-4">
+                Não recebeu o e-mail? <MudLink Href="Account/ResendEmailConfirmation" Typo="Typo.body2">Reenviar confirmação</MudLink>
+            </MudText>
+        }
+
         <EditForm EditContext="editContext" method="post" OnSubmit="LoginUser" FormName="login">
             <DataAnnotationsValidator />
 
@@ -78,6 +85,7 @@
 
 @code {
     private string? errorMessage;
+    private bool showResendConfirmation;
     private EditContext editContext = default!;
 
     [CascadingParameter]
@@ -108,7 +116,8 @@
             return;
         }
 
-        var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+        // lockoutOnFailure: cada senha errada conta para o bloqueio temporário (ver Lockout no Program.cs)
+        var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: true);
 
         if (result.Succeeded)
         {
@@ -131,6 +140,12 @@
         {
             Logger.LogWarning("Conta de usuário bloqueada.");
             RedirectManager.RedirectTo("Account/Lockout");
+        }
+        else if (result.IsNotAllowed)
+        {
+            // Senha correta, mas o e-mail ainda não foi confirmado (RequireConfirmedAccount)
+            errorMessage = "Erro: confirme seu e-mail para entrar.";
+            showResendConfirmation = true;
         }
         else
         {

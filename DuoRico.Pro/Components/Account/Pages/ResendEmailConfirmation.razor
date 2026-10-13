@@ -1,0 +1,105 @@
+@page "/Account/ResendEmailConfirmation"
+
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@using System.Text.Encodings.Web
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.WebUtilities
+@using DuoRico.Pro.Data
+
+@layout DuoRico.Pro.Components.Layout.AuthLayout
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IEmailSender<ApplicationUser> EmailSender
+@inject NavigationManager NavigationManager
+@inject ILogger<ResendEmailConfirmation> Logger
+
+<PageTitle>Reenviar confirmação - Duo Rico Pro</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8 mb-8">
+    <MudPaper Elevation="0" Outlined="true" Class="pa-6 pa-sm-8">
+
+        <div class="d-flex flex-column align-center mb-6">
+            <MudIcon Icon="@Icons.Material.Rounded.MarkEmailUnread" Color="Color.Primary" Size="Size.Large" Class="mb-3" Style="width: 64px; height: 64px;" />
+            <MudText Typo="Typo.h5" Color="Color.Dark">Reenviar confirmação</MudText>
+            <MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Dark" Class="mt-2">
+                Digite o e-mail cadastrado e enviaremos um novo link de confirmação.
+            </MudText>
+        </div>
+
+        <StatusMessage Message="@message" Severity="Severity.Info" />
+
+        <EditForm Model="Input" FormName="resend-email-confirmation" OnValidSubmit="OnValidSubmitAsync" method="post">
+            <DataAnnotationsValidator />
+
+            <MudTextField @bind-Value="Input.Email"
+                          For="@(() => Input.Email)"
+                          name="Input.Email"
+                          Label="E-mail"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="mb-6" />
+
+            <MudButton ButtonType="ButtonType.Submit"
+                       Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Size="Size.Large"
+                       Class="mud-width-full py-2 mb-4">
+                Reenviar link
+            </MudButton>
+
+            <div class="d-flex justify-center">
+                <MudLink Href="/login" Color="Color.Primary" Typo="Typo.body2">
+                    Voltar para o login
+                </MudLink>
+            </div>
+        </EditForm>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string? message;
+
+    [SupplyParameterFromForm(FormName = "resend-email-confirmation")]
+    private InputModel Input { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        Input ??= new();
+    }
+
+    private async Task OnValidSubmitAsync()
+    {
+        var user = await UserManager.FindByEmailAsync(Input.Email);
+
+        if (user is not null && !await UserManager.IsEmailConfirmedAsync(user))
+        {
+            try
+            {
+                var userId = await UserManager.GetUserIdAsync(user);
+                var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+                code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+                var callbackUrl = NavigationManager.GetUriWithQueryParameters(
+                    NavigationManager.ToAbsoluteUri("Account/ConfirmEmail").AbsoluteUri,
+                    new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code });
+
+                await EmailSender.SendConfirmationLinkAsync(user, Input.Email, HtmlEncoder.Default.Encode(callbackUrl));
+            }
+            catch (Exception ex)
+            {
+                // Falha no envio não pode mudar a resposta: revelaria que a conta existe
+                Logger.LogError(ex, "Falha ao reenviar o link de confirmação para o usuário {UserId}.", user.Id);
+            }
+        }
+
+        // Mesma resposta para conta inexistente, já confirmada ou envio com falha (evita enumeração de contas)
+        message = "Se o e-mail estiver cadastrado e ainda não confirmado, enviaremos um novo link. Verifique sua caixa de entrada e a pasta de spam.";
+    }
+
+    private sealed class InputModel
+    {
+        [Required(ErrorMessage = "O e-mail é obrigatório.")]
+        [EmailAddress(ErrorMessage = "Formato de e-mail inválido.")]
+        public string Email { get; set; } = "";
+    }
+}

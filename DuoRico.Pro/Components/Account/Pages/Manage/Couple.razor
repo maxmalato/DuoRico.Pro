@@ -1,0 +1,214 @@
+@page "/Account/Manage/Couple"
+
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Identity
+@using DuoRico.Pro.Data
+@using DuoRico.Pro.DTOs
+@using DuoRico.Pro.Interfaces
+
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+@inject ICoupleService CoupleService
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Casal - Duo Rico Pro</PageTitle>
+
+<MudText Typo="Typo.h5" Color="Color.Dark" Class="mb-1">Casal</MudText>
+<MudText Typo="Typo.body2" Class="mud-text-secondary mb-6">
+    Vincule sua conta à do seu parceiro(a) para compartilhar receitas e despesas.
+</MudText>
+
+<StatusMessage Message="@message" />
+
+@* SITUAÇÃO ATUAL *@
+<div class="surface-card d-flex align-center gap-3 pa-4 mb-6">
+    <span class="page-header-icon @(partners.Count > 0 ? "tonal-success" : "tonal-primary")">
+        <MudIcon Icon="@(partners.Count > 0 ? Icons.Material.Rounded.Favorite : Icons.Material.Rounded.FavoriteBorder)" />
+    </span>
+    <div>
+        @if (partners.Count == 0)
+        {
+            <MudText Typo="Typo.subtitle2">Você ainda não está vinculado(a)</MudText>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">Gere um código e envie para seu parceiro(a), ou use o código que você recebeu.</MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.subtitle2">Vinculado(a) com @string.Join(" e ", partners)</MudText>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">Vocês veem e editam as transações um do outro.</MudText>
+        }
+    </div>
+</div>
+
+@if (partners.Count > 1)
+{
+    @* Casais criados antes do limite de 2 pessoas (quando bastava colar o ID) *@
+    <MudAlert Severity="Severity.Warning" Elevation="0" Dense="true" Class="mb-6">
+        Seu casal tem mais de 2 pessoas. Se você não reconhece alguém, desvincule-se e convide seu parceiro(a) novamente.
+    </MudAlert>
+}
+
+@if (partners.Count > 0)
+{
+    @* DESVINCULAR *@
+    <MudText Typo="Typo.h6" Class="mb-1">Desvincular</MudText>
+    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+        Cada um continua com as próprias transações, mas deixa de ver as do outro.
+    </MudText>
+    <form method="post" @formname="couple-unlink" @onsubmit="UnlinkAsync">
+        <AntiforgeryToken />
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Rounded.LinkOff">
+            Desvincular
+        </MudButton>
+    </form>
+}
+else
+{
+    @* CONVIDAR *@
+    <MudText Typo="Typo.h6" Class="mb-1">Convidar parceiro(a)</MudText>
+    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+        O código vale por 24 horas e pode ser usado uma única vez.
+    </MudText>
+
+    @if (invite is not null)
+    {
+        <div class="surface-card couple-code-card pa-4 mb-4">
+            <span class="couple-code" aria-label="Código de convite">@invite.Code</span>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                Válido até @FormatLocal(invite.ExpiresAt). Ele não será mostrado novamente.
+            </MudText>
+        </div>
+    }
+    else if (pendingInviteExpiresAt is { } expiresAt)
+    {
+        <MudText Typo="Typo.body2" Class="mb-4">
+            Você tem um código ativo até @FormatLocal(expiresAt). Gerar outro invalida o anterior.
+        </MudText>
+    }
+
+    <form method="post" @formname="couple-invite" @onsubmit="CreateInviteAsync">
+        <AntiforgeryToken />
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.Add">
+            Gerar código
+        </MudButton>
+    </form>
+
+    <MudDivider Class="my-6" />
+
+    @* ACEITAR *@
+    <MudText Typo="Typo.h6" Class="mb-1">Tenho um código</MudText>
+    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+        Ao vincular, suas transações passam a ser visíveis para o casal.
+    </MudText>
+
+    <MudGrid>
+        <MudItem xs="12" sm="8" md="6">
+            <EditForm Model="Input" FormName="couple-accept" OnValidSubmit="AcceptAsync" method="post">
+                <DataAnnotationsValidator />
+
+                <MudTextField @bind-Value="Input.Code"
+                              For="@(() => Input.Code)"
+                              name="Input.Code"
+                              Label="Código de convite"
+                              Placeholder="XXXX-XXXX"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Class="mb-4" />
+
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.Link">
+                    Vincular
+                </MudButton>
+            </EditForm>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private string? message;
+    private ApplicationUser? user;
+    private IReadOnlyList<string> partners = [];
+    private DateTimeOffset? pendingInviteExpiresAt;
+    private CoupleInviteDto? invite;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm(FormName = "couple-accept")]
+    private InputModel Input { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Input ??= new();
+
+        user = await UserManager.GetUserAsync(HttpContext.User);
+        if (user is null)
+        {
+            RedirectManager.RedirectToInvalidUser(UserManager, HttpContext);
+            return;
+        }
+
+        partners = await CoupleService.GetPartnerNamesAsync(user);
+        pendingInviteExpiresAt = await CoupleService.GetPendingInviteExpirationAsync(user);
+    }
+
+    private async Task CreateInviteAsync()
+    {
+        if (user is null) return;
+
+        var (newInvite, result) = await CoupleService.CreateInviteAsync(user);
+
+        // Sem redirect: o código só existe nesta resposta (no banco fica apenas o hash)
+        invite = newInvite;
+        message = result.Message;
+    }
+
+    private async Task AcceptAsync()
+    {
+        if (user is null) return;
+
+        var result = await CoupleService.AcceptInviteAsync(user, Input.Code);
+        if (!result.Succeeded)
+        {
+            message = result.Message;
+            return;
+        }
+
+        RedirectManager.RedirectToCurrentPageWithStatus(result.Message, HttpContext);
+    }
+
+    private async Task UnlinkAsync()
+    {
+        if (user is null) return;
+
+        var result = await CoupleService.UnlinkAsync(user);
+        if (!result.Succeeded)
+        {
+            message = result.Message;
+            return;
+        }
+
+        // O desvínculo troca o security stamp; renova o cookie desta sessão para ela continuar válida
+        await SignInManager.RefreshSignInAsync(user);
+        RedirectManager.RedirectToCurrentPageWithStatus(result.Message, HttpContext);
+    }
+
+    // O servidor roda em UTC; mostra a validade no horário de Brasília
+    private static string FormatLocal(DateTimeOffset value)
+    {
+        try
+        {
+            var brazil = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+            return TimeZoneInfo.ConvertTime(value, brazil).ToString("dd/MM/yyyy 'às' HH:mm");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return value.ToUniversalTime().ToString("dd/MM/yyyy 'às' HH:mm 'UTC'");
+        }
+    }
+
+    private sealed class InputModel
+    {
+        [Required(ErrorMessage = "Digite o código de convite.")]
+        [StringLength(20, ErrorMessage = "Código inválido.")]
+        public string Code { get; set; } = "";
+    }
+}

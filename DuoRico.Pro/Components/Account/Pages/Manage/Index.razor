@@ -39,15 +39,6 @@
                           Margin="Margin.Dense"
                           Class="mb-4" />
 
-            @* ID do casal *@
-            <MudTextField @bind-Value="Input.CoupleId"
-                          For="@(() => Input.CoupleId)"
-                          name="Input.CoupleId"
-                          Label="ID do Casal (Copie o ID do seu parceiro para vincular)"
-                          Variant="Variant.Outlined"
-                          Margin="Margin.Dense"
-                          Class="mb-4" />
-
             @* Telefone *@
             <MudTextField @bind-Value="Input.PhoneNumber"
                           For="@(() => Input.PhoneNumber)"
@@ -75,7 +66,6 @@
     private string? username;
     private string? phoneNumber;
     private string? name;
-    private Guid? coupleId;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -96,12 +86,10 @@
 
         username = await UserManager.GetUserNameAsync(user);
         phoneNumber = await UserManager.GetPhoneNumberAsync(user);
-        coupleId = user.CoupleId;
         name = user.Name;
 
         Input.PhoneNumber ??= phoneNumber;
         Input.Name ??= name;
-        Input.CoupleId ??= coupleId?.ToString();
     }
 
     private async Task OnValidSubmitAsync()
@@ -140,38 +128,9 @@
             hasChanges = true;
         }
 
-        // 3. Atualiza ID do Casal
-        if (Input.CoupleId != coupleId?.ToString())
-        {
-            if (!string.IsNullOrWhiteSpace(Input.CoupleId) && Guid.TryParse(Input.CoupleId, out Guid newCoupleId))
-            {
-                var partnerExists = await UserManager.Users.AnyAsync(u => u.CoupleId == newCoupleId && u.Id != user.Id);
+        // O vínculo de casal não é editável aqui: só por convite, em Minha conta > Casal (ver CoupleService)
 
-                if (!partnerExists)
-                {
-                    RedirectManager.RedirectToCurrentPageWithStatus("Erro: Nenhum parceiro encontrado com este ID.", HttpContext);
-                    return;
-                }
-
-                user.CoupleId = newCoupleId;
-                var updateResult = await UserManager.UpdateAsync(user);
-
-                if (!updateResult.Succeeded)
-                {
-                    RedirectManager.RedirectToCurrentPageWithStatus("Erro: Falha ao vincular o ID do casal.", HttpContext);
-                    return;
-                }
-
-                hasChanges = true;
-            }
-            else
-            {
-                RedirectManager.RedirectToCurrentPageWithStatus("Erro: O formato do ID do casal é inválido.", HttpContext);
-                return;
-            }
-        }
-
-        // 4. Finalização
+        // 3. Finalização
         if (hasChanges)
         {
             await SignInManager.RefreshSignInAsync(user);
@@ -192,8 +151,5 @@
         [Required(ErrorMessage = "O nome é obrigatório.")]
         [Display(Name = "Nome")]
         public string? Name { get; set; }
-
-        [Display(Name = "ID do Casal")]
-        public string? CoupleId { get; set; }
     }
 }

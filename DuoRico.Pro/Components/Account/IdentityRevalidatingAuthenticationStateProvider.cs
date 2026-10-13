@@ -15,7 +15,9 @@ namespace DuoRico.Pro.Components.Account
             IOptions<IdentityOptions> options)
         : RevalidatingServerAuthenticationStateProvider(loggerFactory)
     {
-        protected override TimeSpan RevalidationInterval => TimeSpan.FromMinutes(30);
+        // Curto para que troca de senha ou exclusão de conta encerre sessões abertas em outros aparelhos rapidamente.
+        // Custo: uma consulta leve por usuário conectado a cada minuto.
+        protected override TimeSpan RevalidationInterval => TimeSpan.FromMinutes(1);
 
         protected override async Task<bool> ValidateAuthenticationStateAsync(
             AuthenticationState authenticationState, CancellationToken cancellationToken)

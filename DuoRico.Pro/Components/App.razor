@@ -1,3 +1,4 @@
+@using DuoRico.Pro.Security
 @using DuoRico.Pro.Services
 
 <!DOCTYPE html>
@@ -13,7 +14,8 @@
     <link rel="stylesheet" href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["DuoRico.Pro.styles.css"]" />
-    <ImportMap />
+    @* Único script inline da página: liberado no CSP pelo nonce desta requisição (ver SecurityExtensions) *@
+    <ImportMap nonce="@HttpContext.GetCspNonce()" />
     <link rel="icon" type="image/png" href="favicon.png" />
     <script src="@Assets["js/theme.js"]"></script>
     <HeadOutlet @rendermode="PageRenderMode" />

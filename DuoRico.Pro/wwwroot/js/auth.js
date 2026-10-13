@@ -1,0 +1,51 @@
+// Comportamentos das telas de conta (SSR estático). Arquivo próprio em vez de <script> inline
+// para que o Content-Security-Policy não precise liberar scripts inline.
+(function () {
+    // Evita registrar os listeners duas vezes caso o script seja carregado de novo
+    if (window.duoAuthInitialized) return;
+    window.duoAuthInitialized = true;
+
+    window.addEventListener('submit', function () {
+
+        // Desativa o botão de submit e muda o texto
+        var btn = document.querySelector('button[type="submit"]');
+        if (btn) {
+            btn.style.pointerEvents = 'none';
+            btn.style.opacity = '0.8';
+            btn.innerText = 'Aguarde...';
+        }
+
+        // Desativa os links de ação
+        var links = document.getElementById('actionLinks');
+        if (links) {
+            links.style.pointerEvents = 'none';
+            links.style.opacity = '0.5';
+        }
+    });
+
+    // Mostrar/ocultar senha. Delegado no document porque as telas de conta são
+    // SSR estático: cada navegação entrega uma página nova, sem re-executar scripts por campo.
+    document.addEventListener('click', function (e) {
+
+        var btn = e.target.closest('[data-password-toggle]');
+        if (!btn) return;
+
+        var field = btn.closest('.password-field');
+        var input = field && field.querySelector('input');
+        if (!input) return;
+
+        var show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+
+        btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+        btn.setAttribute('aria-label', show ? 'Ocultar senha' : 'Mostrar senha');
+        btn.querySelector('[data-icon="show"]').hidden = show;
+        btn.querySelector('[data-icon="hide"]').hidden = !show;
+
+        // Devolve o foco ao campo com o cursor no fim do texto
+        var value = input.value;
+        input.focus();
+        input.value = '';
+        input.value = value;
+    });
+})();

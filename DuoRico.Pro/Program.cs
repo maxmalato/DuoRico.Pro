@@ -4,6 +4,7 @@ using DuoRico.Pro.Data;
 using DuoRico.Pro.Interfaces;
 using DuoRico.Pro.Services;
 using DuoRico.Pro.Repositories;
+using DuoRico.Pro.Security;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -19,7 +20,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents(options =>
     {
-        options.DetailedErrors = true;
+        // Detalhes de exceção no navegador só em desenvolvimento: em produção expõem a estrutura interna
+        options.DetailedErrors = builder.Environment.IsDevelopment();
     });
 
 builder.Services.AddCascadingAuthenticationState();
@@ -42,6 +44,11 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
     {
         options.SignIn.RequireConfirmedAccount = true;
         options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
+
+        // Bloqueio contra força bruta: 5 senhas erradas seguidas bloqueiam a conta por 15 minutos
+        options.Lockout.AllowedForNewUsers = true;
+        options.Lockout.MaxFailedAccessAttempts = 5;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
     })
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddSignInManager()
@@ -100,6 +107,14 @@ builder.Services.AddOptions<EmailSettings>()
 var emailProvider = builder.Configuration
     .GetValue<EmailProvider?>($"{EmailSettings.SectionName}:Provider") ?? EmailProvider.Brevo;
 
+// O provedor Log escreve os links (confirmação, redefinição de senha) no log e a tela de cadastro os exibe:
+// fora de desenvolvimento isso permitiria confirmar o e-mail de outra pessoa.
+if (emailProvider == EmailProvider.Log && !builder.Environment.IsDevelopment())
+{
+    throw new InvalidOperationException(
+        "EmailSettings:Provider=Log só é permitido em Development. Configure o provedor Brevo.");
+}
+
 if (emailProvider == EmailProvider.Log)
 {
     builder.Services.AddTransient<IEmailSender<ApplicationUser>, LoggingEmailSender>();
@@ -121,6 +136,8 @@ builder.Services.AddMudServices();
 builder.Services.AddScoped<ThemeService>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<ICoupleService, CoupleService>();
+builder.Services.AddAuthRateLimiting();
 
 var app = builder.Build();
 
@@ -155,6 +172,8 @@ app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages:
 // internamente) e o ForwardedHeadersOptions acima já faz o app enxergar https. Manter o
 // middleware faria o health check interno do Render (sem X-Forwarded-Proto) receber um
 // redirect em vez de 200 OK.
+app.UseSecurityHeaders(app.Environment);
+app.UseRateLimiter();
 app.UseAntiforgery();
 
 app.MapStaticAssets();

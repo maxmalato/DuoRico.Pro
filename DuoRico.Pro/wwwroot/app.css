@@ -755,6 +755,24 @@ body {
     }
 }
 
+/* ===== Minha conta > Casal: código de convite ===== */
+.couple-code-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+}
+
+.couple-code {
+    font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--mud-palette-primary);
+    user-select: all;
+}
+
 /* ===== Minha conta (ManageLayout / ManageNavMenu) ===== */
 .manage-tabs {
     display: none;
