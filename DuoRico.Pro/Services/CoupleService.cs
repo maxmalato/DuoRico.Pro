@@ -148,6 +148,10 @@ public sealed class CoupleService(
         // Uso único: o código deixa de valer assim que é aceito
         await userManager.RemoveAuthenticationTokenAsync(inviter, TokenProvider, InviteTokenName);
 
+        // O casal fica numa claim do cookie de login: trocar o stamp faz as outras sessões desta conta
+        // serem renovadas na revalidação. Quem chama deve renovar o cookie da sessão atual.
+        await userManager.UpdateSecurityStampAsync(user);
+
         logger.LogInformation("Usuário {UserId} entrou no casal do usuário {InviterId}.", user.Id, inviter.Id);
 
         return CoupleResultDto.Ok("Vínculo realizado! Agora vocês compartilham as transações.");

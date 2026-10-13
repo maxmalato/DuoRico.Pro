@@ -30,6 +30,9 @@ public class TransactionService(ITransactionRepository repository) : ITransactio
         int currentMonth = createTransactionDto.Month;
         int currentYear = createTransactionDto.Year;
 
+        // Monta todas as parcelas e grava de uma vez: 1 ida ao banco e tudo ou nada
+        var installments = new List<Transaction>(totalInstallments);
+
         for (int i = 1; i <= totalInstallments; i++)
         {
             bool isParcelPaid = (i == 1) ? createTransactionDto.IsPaid : false;
@@ -48,7 +51,7 @@ public class TransactionService(ITransactionRepository repository) : ITransactio
                    installmentGroupId: groupId
                );
 
-            await repository.AddAsync(transaction);
+            installments.Add(transaction);
 
             // Incrementa mês e ano para próximas parcelas
             currentMonth++;
@@ -59,79 +62,17 @@ public class TransactionService(ITransactionRepository repository) : ITransactio
             }
         }
 
-        return true;
-    }
-
-    public async Task<bool> UpdateTransactionAsync(UpdateTransactionDto updateTransactionDto, Guid coupleId)
-    {
-        var existing = await repository.GetByIdAsync(updateTransactionDto.Id, coupleId);
-
-        if (existing == null) return false;
-
-        existing.Update(
-            description: updateTransactionDto.Description,
-            amount: updateTransactionDto.Amount,
-            category: updateTransactionDto.Category,
-            isPaid: updateTransactionDto.IsPaid
-        );
-
-        await repository.UpdateAsync(existing);
+        await repository.AddRangeAsync(installments);
 
         return true;
     }
 
-    public async Task<bool> DeleteTransactionAsync(Guid transactionId, Guid coupleId)
-    {
-        var existing = await repository.GetByIdAsync(transactionId, coupleId);
+    public Task<bool> UpdateTransactionAsync(UpdateTransactionDto updateTransactionDto, Guid coupleId)
+        => repository.UpdateAsync(updateTransactionDto, coupleId);
 
-        if (existing == null) return false;
+    public Task<bool> DeleteTransactionAsync(Guid transactionId, Guid coupleId)
+        => repository.DeleteAsync(transactionId, coupleId);
 
-        await repository.DeleteAsync(existing);
-
-        return true;
-    }
-
-
-    public async Task<bool> DeleteInstallmentsFromAsync(Guid transactionId, Guid coupleId)
-    {
-        var existing = await repository.GetByIdAsync(transactionId, coupleId);
-
-        if (existing == null) return false;
-
-        if (existing.InstallmentGroupId == null)
-        {
-            await repository.DeleteAsync(existing);
-
-            return true;
-        }
-
-        var allGroupInstallments = await repository.GetByInstallmentGroupIdAsync(existing.InstallmentGroupId.Value, coupleId);
-
-        var installmentsToDelete = allGroupInstallments
-            .Where(t => t.InstallmentNumber >= existing.InstallmentNumber)
-            .ToList();
-
-        foreach (var installment in installmentsToDelete)
-        {
-            await repository.DeleteAsync(installment);
-        }
-
-        var newTotalInstallments = existing.InstallmentNumber - 1;
-
-        if (newTotalInstallments > 0)
-        {
-            var installmentsToKeep = allGroupInstallments
-                .Where(t => t.InstallmentNumber < existing.InstallmentNumber)
-                .ToList();
-
-            foreach (var installment in installmentsToKeep)
-            {
-                installment.TotalInstallments = newTotalInstallments;
-
-                await repository.UpdateAsync(installment);
-            }
-        }
-
-        return true;
-    }
+    public Task<bool> DeleteInstallmentsFromAsync(Guid transactionId, Guid coupleId)
+        => repository.DeleteInstallmentsFromAsync(transactionId, coupleId);
 }

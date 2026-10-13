@@ -1,11 +1,7 @@
-@using Microsoft.AspNetCore.Identity
-@using DuoRico.Pro.Data
-
 @implements IDisposable
 
 @inject NavigationManager NavigationManager
-@inject AuthenticationStateProvider AuthStateProvider
-@inject IServiceProvider ServiceProvider
+@inject ICurrentUserService CurrentUser
 
 @if (InteractivePage)
 {
@@ -55,21 +51,18 @@ else
         _currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
         NavigationManager.LocationChanged += OnLocationChanged;
 
-        var user = (await AuthStateProvider.GetAuthenticationStateAsync()).User;
+        // Nome e e-mail vêm do cookie de login (claims), sem consulta ao banco a cada página
+        var currentUser = await CurrentUser.GetAsync();
 
-        if (user.Identity?.IsAuthenticated != true)
+        if (currentUser is null)
         {
             return;
         }
 
-        _email = user.Identity.Name ?? "";
+        _email = currentUser.Email;
         _name = _email;
 
-        using var scope = ServiceProvider.CreateScope();
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        var appUser = await userManager.GetUserAsync(user);
-
-        var nameParts = (appUser?.Name ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var nameParts = currentUser.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
         if (nameParts.Length > 0)
         {

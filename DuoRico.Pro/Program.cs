@@ -36,8 +36,12 @@ builder.Services.AddAuthentication(options =>
     .AddIdentityCookies();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString));
+// Factory: no Blazor Server um DbContext "scoped" viveria a sessão inteira do usuário; o repositório cria um
+// contexto curto por operação. AddDbContextFactory também registra o ApplicationDbContext como scoped, usado
+// pelo Identity, Data Protection e páginas SSR (lá o escopo é a requisição).
+// EnableRetryOnFailure: repete falhas transitórias do Neon (cold start do serverless, conexão derrubada).
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
+    options.UseNpgsql(connectionString, npgsql => npgsql.EnableRetryOnFailure(maxRetryCount: 3)));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddIdentityCore<ApplicationUser>(options =>
@@ -51,6 +55,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
         options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
     })
     .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddClaimsPrincipalFactory<AppClaimsPrincipalFactory>()
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
@@ -137,6 +142,7 @@ builder.Services.AddScoped<ThemeService>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<ICoupleService, CoupleService>();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddAuthRateLimiting();
 
 var app = builder.Build();

@@ -1,13 +1,10 @@
 @using System.Globalization
 @using DuoRico.Pro.Constants
 @using DuoRico.Pro.Models
-@using DuoRico.Pro.Data
 @using DuoRico.Pro.Helpers
-@using Microsoft.AspNetCore.Identity
 
 @inject ITransactionService TransactionService
-@inject AuthenticationStateProvider AuthStateProvider
-@inject UserManager<ApplicationUser> UserManager
+@inject ICurrentUserService CurrentUser
 @inject IDialogService DialogService
 @inject IBrowserViewportService BrowserViewport
 @inject ISnackbar Snackbar
@@ -176,6 +173,11 @@
     private int _selectedYear = DateTime.Now.AddMonths(1).Year;
     private string _currentUserId = "";
     private Guid _currentCoupleId = Guid.Empty;
+
+    // Lançamentos do período carregados na pré-renderização e repassados ao circuito interativo:
+    // evita repetir a mesma consulta ao banco quando a página fica interativa.
+    [PersistentState]
+    public List<TransactionDto>? InitialTransactions { get; set; }
     private bool _isLoading = true;
     private string _searchString = "";
     private Guid? _togglingId;
@@ -224,21 +226,19 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        if (user.Identity?.IsAuthenticated == true)
+        var currentUser = await CurrentUser.GetAsync();
+
+        if (currentUser?.CoupleId is { } coupleId)
         {
-            var appUser = await UserManager.GetUserAsync(user);
-            if (appUser != null)
-            {
-                _currentUserId = appUser.Id;
-                _currentCoupleId = appUser.CoupleId ?? Guid.Empty;
-                await LoadDataAsync();
-            }
+            _currentUserId = currentUser.UserId;
+            _currentCoupleId = coupleId;
+
+            // Na pré-renderização consulta; no circuito interativo reaproveita o que veio dela
+            InitialTransactions ??= await FetchTransactionsAsync();
+            ShowTransactions(InitialTransactions);
         }
 
-        // Usuário sem casal vinculado: não há o que carregar
-        if (_currentCoupleId == Guid.Empty) _isLoading = false;
+        _isLoading = false;
     }
 
     private async Task LoadDataAsync()
@@ -247,15 +247,21 @@
         _isLoading = true;
         try
         {
-            // O filtro por tipo e a ordenação (pendentes primeiro, depois mais recentes)
-            // são resolvidos no banco; aqui a lista já chega pronta para exibição.
-            _transactions = await TransactionService
-                .GetCoupleTransactionsForPeriodAsync(_currentCoupleId, _selectedMonth, _selectedYear, Type);
-
-            CalculateSummaries();
-            ApplyFilter();
+            ShowTransactions(await FetchTransactionsAsync());
         }
         finally { _isLoading = false; StateHasChanged(); }
+    }
+
+    // O filtro por tipo e a ordenação (pendentes primeiro, depois mais recentes)
+    // são resolvidos no banco; aqui a lista já chega pronta para exibição.
+    private Task<List<TransactionDto>> FetchTransactionsAsync() =>
+        TransactionService.GetCoupleTransactionsForPeriodAsync(_currentCoupleId, _selectedMonth, _selectedYear, Type);
+
+    private void ShowTransactions(List<TransactionDto> transactions)
+    {
+        _transactions = transactions;
+        CalculateSummaries();
+        ApplyFilter();
     }
 
     private void CalculateSummaries()

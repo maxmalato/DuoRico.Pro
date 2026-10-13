@@ -172,6 +172,8 @@ else
             return;
         }
 
+        // Regera o cookie com o novo casal (claim) para as telas mostrarem as transações do parceiro já
+        await SignInManager.RefreshSignInAsync(user);
         RedirectManager.RedirectToCurrentPageWithStatus(result.Message, HttpContext);
     }
 

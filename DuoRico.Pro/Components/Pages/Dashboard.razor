@@ -7,13 +7,10 @@
 @using Microsoft.AspNetCore.Authorization
 @using System.Globalization
 @using DuoRico.Pro.Models
-@using DuoRico.Pro.Data
 @using DuoRico.Pro.Helpers
-@using Microsoft.AspNetCore.Identity
 
 @inject ITransactionService TransactionService
-@inject AuthenticationStateProvider AuthStateProvider
-@inject UserManager<ApplicationUser> UserManager
+@inject ICurrentUserService CurrentUser
 
 <PageTitle>Duo Rico Pro - Dashboard</PageTitle>
 
@@ -162,6 +159,11 @@
     // Regra dos 10% no cartão de crédito
     private List<TransactionDto> _monthlyTransactions = new();
 
+    // Transações do mês carregadas na pré-renderização e repassadas ao circuito interativo:
+    // evita repetir a mesma consulta ao banco quando a página fica interativa.
+    [PersistentState]
+    public List<TransactionDto>? InitialTransactions { get; set; }
+
     private string MonthName => DateHelpers.GetMonthName(_selectedMonth);
 
     private string BalanceCaption => _summary.TotalIncome > 0
@@ -170,22 +172,18 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
+        var currentUser = await CurrentUser.GetAsync();
 
-        if (user.Identity?.IsAuthenticated == true)
+        if (currentUser?.CoupleId is { } coupleId)
         {
-            var appUser = await UserManager.GetUserAsync(user);
+            _currentCoupleId = coupleId;
 
-            if (appUser?.CoupleId != null)
-            {
-                _currentCoupleId = appUser.CoupleId.Value;
-                await LoadDashboardDataAsync();
-            }
+            // Na pré-renderização consulta; no circuito interativo reaproveita o que veio dela
+            InitialTransactions ??= await TransactionService.GetCoupleTransactionsForPeriodAsync(_currentCoupleId, _selectedMonth, _selectedYear);
+            ApplyData(InitialTransactions);
         }
 
-        // Usuário sem casal vinculado: não há o que carregar
-        if (_currentCoupleId == Guid.Empty) _isLoading = false;
+        _isLoading = false;
     }
 
     private async Task LoadDashboardDataAsync()
@@ -197,25 +195,28 @@
         try
         {
             // Busca as transações do casal no banco de dados para o mês selecionado
-            var transactions = await TransactionService.GetCoupleTransactionsForPeriodAsync(_currentCoupleId, _selectedMonth, _selectedYear);
-
-            // Calcula os totais com LINQ
-            _summary.TotalIncome = transactions.Where(t => t.Type == TransactionType.Income).Sum(t => t.Amount);
-            _summary.TotalExpense = transactions.Where(t => t.Type == TransactionType.Expense).Sum(t => t.Amount);
-
-            // Últimas 5 despesas (ordem decrescente de criação)
-            _latestExpenses = transactions
-                .Where(t => t.Type == TransactionType.Expense)
-                .OrderByDescending(t => t.CreatedAt)
-                .Take(5)
-                .ToList();
-
-            // Busca os dados da regra dos 10% no cartão de créidito
-            _monthlyTransactions = transactions;
+            ApplyData(await TransactionService.GetCoupleTransactionsForPeriodAsync(_currentCoupleId, _selectedMonth, _selectedYear));
         }
         finally
         {
             _isLoading = false;
         }
+    }
+
+    private void ApplyData(List<TransactionDto> transactions)
+    {
+        // Calcula os totais com LINQ
+        _summary.TotalIncome = transactions.Where(t => t.Type == TransactionType.Income).Sum(t => t.Amount);
+        _summary.TotalExpense = transactions.Where(t => t.Type == TransactionType.Expense).Sum(t => t.Amount);
+
+        // Últimas 5 despesas (ordem decrescente de criação)
+        _latestExpenses = transactions
+            .Where(t => t.Type == TransactionType.Expense)
+            .OrderByDescending(t => t.CreatedAt)
+            .Take(5)
+            .ToList();
+
+        // Busca os dados da regra dos 10% no cartão de créidito
+        _monthlyTransactions = transactions;
     }
 }

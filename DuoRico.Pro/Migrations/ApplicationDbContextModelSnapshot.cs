@@ -84,6 +84,8 @@ namespace DuoRico.Pro.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CoupleId");
+
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
 
@@ -140,7 +142,7 @@ namespace DuoRico.Pro.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "Year", "Month");
 
                     b.ToTable("Transactions");
                 });

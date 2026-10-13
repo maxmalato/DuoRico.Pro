@@ -230,6 +230,24 @@ dotnet user-secrets set "EmailSettings:BrevoApiKey" "xkeysib-..."
 
 Veja a seção [Envio de E-mails](#-envio-de-e-mails) para obter a chave e entender o toggle `Provider`.
 
+### Connection string do Neon (recomendado para produção)
+
+Use o endpoint **com pooler** do Neon (o host termina em `-pooler`), que suporta muito mais conexões simultâneas, e limite o pool do Npgsql. Exemplo com valores fictícios:
+
+```text
+Host=ep-exemplo-123456-pooler.sa-east-1.aws.neon.tech;Database=duorico;Username=usuario;Password=********;SSL Mode=Require;Maximum Pool Size=20;Timeout=15;Keepalive=30;No Reset On Close=true
+```
+
+| Parâmetro | Por quê |
+|---|---|
+| `-pooler` no host | O PgBouncer do Neon multiplexa conexões; sem ele o limite de conexões do plano é atingido rápido. |
+| `Maximum Pool Size=20` | Limita as conexões abertas por instância do app. |
+| `Timeout=15` | Tempo máximo para abrir conexão (o Neon pode estar "acordando"). |
+| `Keepalive=30` | Evita que conexões ociosas sejam derrubadas silenciosamente. |
+| `No Reset On Close=true` | Necessário com o pooler em modo transação (o `DISCARD ALL` do reset não é suportado). |
+
+O app já repete automaticamente falhas transitórias do banco (`EnableRetryOnFailure` no `Program.cs`).
+
 ### Rider
 
 ```text
