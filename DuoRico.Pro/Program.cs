@@ -55,6 +55,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
         options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
     })
     .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddErrorDescriber<PortugueseIdentityErrorDescriber>()
     .AddClaimsPrincipalFactory<AppClaimsPrincipalFactory>()
     .AddSignInManager()
     .AddDefaultTokenProviders();
