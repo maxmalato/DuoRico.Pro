@@ -9,12 +9,12 @@
 @inject IUserStore<ApplicationUser> UserStore
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Manage your external logins</PageTitle>
+<PageTitle>Gerenciar logins externos</PageTitle>
 
 <StatusMessage />
 @if (currentLogins?.Count > 0)
 {
-    <MudText Typo="Typo.h6" Class="mb-2">Registered Logins</MudText>
+    <MudText Typo="Typo.h6" Class="mb-2">Logins cadastrados</MudText>
     <MudSimpleTable Elevation="0" Class="mb-6">
         <tbody>
             @foreach (var login in currentLogins)
@@ -29,7 +29,7 @@
                                 <div>
                                     <input type="hidden" name="@nameof(LoginProvider)" value="@login.LoginProvider" />
                                     <input type="hidden" name="@nameof(ProviderKey)" value="@login.ProviderKey" />
-                                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" title="@($"Remove this {login.ProviderDisplayName} login from your account")">Remove</MudButton>
+                                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" title="@($"Remover o login {login.ProviderDisplayName} da sua conta")">Remover</MudButton>
                                 </div>
                             </form>
                         }
@@ -45,14 +45,14 @@
 }
 @if (otherLogins?.Count > 0)
 {
-    <MudText Typo="Typo.h6">Add another service to log in.</MudText>
+    <MudText Typo="Typo.h6">Adicione outro serviço para entrar.</MudText>
     <MudDivider Class="my-4" />
     <form action="Account/Manage/LinkExternalLogin" method="post">
         <AntiforgeryToken />
         <div class="d-flex flex-wrap gap-2">
             @foreach (var provider in otherLogins)
             {
-                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" name="Provider" value="@provider.Name" title="@($"Log in using your {provider.DisplayName} account")">
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" name="Provider" value="@provider.Name" title="@($"Entrar usando sua conta {provider.DisplayName}")">
                     @provider.DisplayName
                 </MudButton>
             }
@@ -119,12 +119,12 @@
         var result = await UserManager.RemoveLoginAsync(user, LoginProvider!, ProviderKey!);
         if (!result.Succeeded)
         {
-            RedirectManager.RedirectToCurrentPageWithStatus("Error: The external login was not removed.", HttpContext);
+            RedirectManager.RedirectToCurrentPageWithStatus("Erro: o login externo não foi removido.", HttpContext);
         }
         else
         {
             await SignInManager.RefreshSignInAsync(user);
-            RedirectManager.RedirectToCurrentPageWithStatus("The external login was removed.", HttpContext);
+            RedirectManager.RedirectToCurrentPageWithStatus("O login externo foi removido.", HttpContext);
         }
     }
 
@@ -140,7 +140,7 @@
         var info = await SignInManager.GetExternalLoginInfoAsync(userId);
         if (info is null)
         {
-            RedirectManager.RedirectToCurrentPageWithStatus("Error: Could not load external login info.", HttpContext);
+            RedirectManager.RedirectToCurrentPageWithStatus("Erro: não foi possível carregar as informações do login externo.", HttpContext);
             return;
         }
 
@@ -150,11 +150,11 @@
             // Clear the existing external cookie to ensure a clean login process
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
 
-            RedirectManager.RedirectToCurrentPageWithStatus("The external login was added.", HttpContext);
+            RedirectManager.RedirectToCurrentPageWithStatus("O login externo foi adicionado.", HttpContext);
         }
         else
         {
-            RedirectManager.RedirectToCurrentPageWithStatus("Error: The external login was not added. External logins can only be associated with one account.", HttpContext);
+            RedirectManager.RedirectToCurrentPageWithStatus("Erro: o login externo não foi adicionado. Um login externo só pode estar vinculado a uma conta.", HttpContext);
         }
     }
 }

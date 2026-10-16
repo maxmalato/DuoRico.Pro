@@ -78,14 +78,14 @@
 
         if (RemoteError is not null)
         {
-            RedirectManager.RedirectToWithStatus("/login", $"Error from external provider: {RemoteError}", HttpContext);
+            RedirectManager.RedirectToWithStatus("/login", $"Erro do provedor externo: {RemoteError}", HttpContext);
             return;
         }
 
         var info = await SignInManager.GetExternalLoginInfoAsync();
         if (info is null)
         {
-            RedirectManager.RedirectToWithStatus("/login", "Error loading external login information.", HttpContext);
+            RedirectManager.RedirectToWithStatus("/login", "Erro ao carregar as informações do login externo.", HttpContext);
             return;
         }
 
@@ -109,7 +109,7 @@
     {
         if (externalLoginInfo is null)
         {
-            RedirectManager.RedirectToWithStatus("/login", "Error loading external login information.", HttpContext);
+            RedirectManager.RedirectToWithStatus("/login", "Erro ao carregar as informações do login externo.", HttpContext);
             return;
         }
 
@@ -146,7 +146,7 @@
     {
         if (externalLoginInfo is null)
         {
-            RedirectManager.RedirectToWithStatus("/login", "Error loading external login information during confirmation.", HttpContext);
+            RedirectManager.RedirectToWithStatus("/login", "Erro ao carregar as informações do login externo durante a confirmação.", HttpContext);
             return;
         }
 
@@ -196,7 +196,7 @@
         }
         else
         {
-            message = $"Error: {string.Join(",", result.Errors.Select(error => error.Description))}";
+            message = $"Erro: {string.Join(", ", result.Errors.Select(error => error.Description))}";
         }
     }
 
@@ -208,8 +208,8 @@
         }
         catch
         {
-            throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. " +
-                $"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor");
+            throw new InvalidOperationException($"Não é possível criar uma instância de '{nameof(ApplicationUser)}'. " +
+                $"Certifique-se de que '{nameof(ApplicationUser)}' não é uma classe abstrata e possui um construtor sem parâmetros.");
         }
     }
 
@@ -217,15 +217,15 @@
     {
         if (!UserManager.SupportsUserEmail)
         {
-            throw new NotSupportedException("The default UI requires a user store with email support.");
+            throw new NotSupportedException("A interface padrão requer um armazenamento de usuário com suporte a e-mail.");
         }
         return (IUserEmailStore<ApplicationUser>)UserStore;
     }
 
     private sealed class InputModel
     {
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessage = "O e-mail é obrigatório.")]
+        [EmailAddress(ErrorMessage = "Formato de e-mail inválido.")]
         public string Email { get; set; } = "";
     }
 }
