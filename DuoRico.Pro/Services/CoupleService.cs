@@ -4,6 +4,7 @@ using System.Text;
 using DuoRico.Pro.Data;
 using DuoRico.Pro.DTOs;
 using DuoRico.Pro.Interfaces;
+using DuoRico.Pro.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -138,9 +139,19 @@ public sealed class CoupleService(
             return CoupleResultDto.Fail("Erro: você já está vinculado(a) a outra pessoa. Desvincule-se antes de usar um novo código.");
         }
 
-        user.CoupleId = inviterCoupleId;
-        var result = await userManager.UpdateAsync(user);
-        if (!result.Succeeded)
+        var previousCoupleId = user.CoupleId;
+
+        // Troca de casal e soma das reservas de emergência numa transação só: ou as duas coisas acontecem, ou nenhuma
+        var linked = await RunInTransactionAsync(user, previousCoupleId, async () =>
+        {
+            user.CoupleId = inviterCoupleId;
+            if (!(await userManager.UpdateAsync(user)).Succeeded) return false;
+
+            await MergeEmergencyFundAsync(previousCoupleId, inviterCoupleId);
+            return true;
+        });
+
+        if (!linked)
         {
             return CoupleResultDto.Fail("Erro: não foi possível concluir o vínculo. Tente novamente.");
         }
@@ -154,7 +165,7 @@ public sealed class CoupleService(
 
         logger.LogInformation("Usuário {UserId} entrou no casal do usuário {InviterId}.", user.Id, inviter.Id);
 
-        return CoupleResultDto.Ok("Vínculo realizado! Agora vocês compartilham as transações.");
+        return CoupleResultDto.Ok("Vínculo realizado! Agora vocês compartilham as transações e a reserva de emergência.");
     }
 
     public async Task<CoupleResultDto> UnlinkAsync(ApplicationUser user)
@@ -165,10 +176,19 @@ public sealed class CoupleService(
             return CoupleResultDto.Fail("Erro: você não está vinculado(a) a ninguém.");
         }
 
-        // As transações pertencem ao autor (UserId): com um casal novo, cada um passa a ver só as suas
-        user.CoupleId = Guid.NewGuid();
-        var result = await userManager.UpdateAsync(user);
-        if (!result.Succeeded)
+        // As transações pertencem ao autor (UserId): com um casal novo, cada um passa a ver só as suas.
+        // A reserva de emergência é do casal: é dividida ao meio na mesma transação da troca de casal.
+        var newCoupleId = Guid.NewGuid();
+        var unlinked = await RunInTransactionAsync(user, coupleId, async () =>
+        {
+            user.CoupleId = newCoupleId;
+            if (!(await userManager.UpdateAsync(user)).Succeeded) return false;
+
+            await SplitEmergencyFundAsync(coupleId, newCoupleId);
+            return true;
+        });
+
+        if (!unlinked)
         {
             return CoupleResultDto.Fail("Erro: não foi possível desvincular. Tente novamente.");
         }
@@ -181,7 +201,78 @@ public sealed class CoupleService(
 
         logger.LogInformation("Usuário {UserId} saiu do casal.", user.Id);
 
-        return CoupleResultDto.Ok("Vínculo desfeito. Cada um continua com as próprias transações.");
+        return CoupleResultDto.Ok("Vínculo desfeito. Cada um continua com as próprias transações e a reserva de emergência foi dividida entre vocês.");
+    }
+
+    /// <summary>
+    /// Roda a troca de casal numa transação. Com EnableRetryOnFailure, a transação explícita precisa ficar dentro
+    /// do execution strategy. O UserManager usa este mesmo DbContext (scoped), então o UpdateAsync dele entra na
+    /// transação. Em falha, desfaz o CoupleId em memória para o objeto não divergir do banco.
+    /// </summary>
+    private async Task<bool> RunInTransactionAsync(ApplicationUser user, Guid? previousCoupleId, Func<Task<bool>> operation)
+    {
+        try
+        {
+            var strategy = dbContext.Database.CreateExecutionStrategy();
+            var succeeded = await strategy.ExecuteAsync(async () =>
+            {
+                await using var dbTransaction = await dbContext.Database.BeginTransactionAsync();
+
+                if (!await operation()) return false;
+
+                await dbTransaction.CommitAsync();
+                return true;
+            });
+
+            if (!succeeded) user.CoupleId = previousCoupleId;
+            return succeeded;
+        }
+        catch (Exception ex) when (ex is DbUpdateException or ArgumentException)
+        {
+            // DbUpdateConcurrencyException: o parceiro editou a reserva no mesmo instante.
+            // ArgumentException: a soma das reservas passaria do limite permitido.
+            logger.LogWarning(ex, "Falha ao trocar o casal do usuário {UserId}.", user.Id);
+            user.CoupleId = previousCoupleId;
+            return false;
+        }
+    }
+
+    /// <summary>Soma a reserva do casal antigo (pessoa sozinha) na do casal de destino e remove a antiga.</summary>
+    private async Task MergeEmergencyFundAsync(Guid? fromCoupleId, Guid toCoupleId)
+    {
+        if (fromCoupleId is not { } from) return;
+
+        var source = await dbContext.EmergencyFunds.FirstOrDefaultAsync(f => f.CoupleId == from);
+        if (source is null) return;
+
+        var target = await dbContext.EmergencyFunds.FirstOrDefaultAsync(f => f.CoupleId == toCoupleId);
+        if (target is null)
+        {
+            dbContext.EmergencyFunds.Add(new EmergencyFund(toCoupleId, source.Amount, source.UpdatedByUserId));
+        }
+        else
+        {
+            target.Add(source.Amount);
+        }
+
+        dbContext.EmergencyFunds.Remove(source);
+        await dbContext.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Divide a reserva do casal ao meio: quem fica mantém o registro atual e quem sai ganha um novo.
+    /// Sem autor nos dois: o ajuste foi do sistema, não uma edição de alguém.
+    /// </summary>
+    private async Task SplitEmergencyFundAsync(Guid coupleId, Guid leaverCoupleId)
+    {
+        var fund = await dbContext.EmergencyFunds.FirstOrDefaultAsync(f => f.CoupleId == coupleId);
+        if (fund is null) return;
+
+        var (stays, leaves) = EmergencyFund.Split(fund.Amount);
+
+        fund.SetAmount(stays, updatedByUserId: null);
+        dbContext.EmergencyFunds.Add(new EmergencyFund(leaverCoupleId, leaves, updatedByUserId: null));
+        await dbContext.SaveChangesAsync();
     }
 
     private Task<int> CountMembersAsync(Guid coupleId) =>

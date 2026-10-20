@@ -1,0 +1,130 @@
+@using System.Globalization
+
+@inject IEmergencyFundService EmergencyFundService
+@inject IDialogService DialogService
+@inject IBrowserViewportService BrowserViewport
+@inject ISnackbar Snackbar
+@inject ILogger<EmergencyFundWidget> Logger
+
+@* RESERVA DE EMERGÊNCIA: um valor por casal, independente do período e fora do saldo do mês *@
+<section class="surface-card pa-4 pa-sm-5 mb-6" aria-labelledby="emergency-fund-title">
+    <div class="d-flex flex-wrap align-center justify-space-between gap-3 mb-3">
+        <div class="d-flex align-center gap-3">
+            <span class="page-header-icon tonal-primary">
+                <MudIcon Icon="@Icons.Material.Rounded.Savings" />
+            </span>
+            <div>
+                <MudText Typo="Typo.h6" id="emergency-fund-title">Reserva de emergência</MudText>
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">Não entra no saldo do mês</MudText>
+            </div>
+        </div>
+
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   Size="Size.Small"
+                   StartIcon="@Icons.Material.Rounded.Edit"
+                   Disabled="@(IsLoading || _isSaving || CoupleId == Guid.Empty)"
+                   OnClick="OpenEditDialogAsync">
+            Editar
+        </MudButton>
+    </div>
+
+    @if (IsLoading)
+    {
+        <MudSkeleton Width="40%" Height="32px" />
+    }
+    else
+    {
+        <span class="kpi-value">@Amount.ToString("C", Culture)</span>
+    }
+
+    @if (UpdatedCaption is { } caption)
+    {
+        <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mt-2">@caption</MudText>
+    }
+</section>
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("pt-BR");
+
+    [Parameter] public EmergencyFundDto? Fund { get; set; }
+    [Parameter] public EventCallback<EmergencyFundDto> FundChanged { get; set; }
+    [Parameter] public bool IsLoading { get; set; }
+    [Parameter] public Guid CoupleId { get; set; }
+    [Parameter] public string UserId { get; set; } = "";
+
+    private bool _isSaving;
+
+    private decimal Amount => Fund?.Amount ?? 0m;
+
+    private string? UpdatedCaption => Fund?.UpdatedAt is { } updatedAt
+        ? Fund.UpdatedByName is { Length: > 0 } name
+            ? $"Atualizado por {name} em {FormatLocal(updatedAt)}"
+            : $"Atualizado em {FormatLocal(updatedAt)}"
+        : null;
+
+    private async Task OpenEditDialogAsync()
+    {
+        var breakpoint = await BrowserViewport.GetCurrentBreakpointAsync();
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.ExtraSmall,
+            FullWidth = true,
+            FullScreen = breakpoint == Breakpoint.Xs
+        };
+
+        var parameters = new DialogParameters<EmergencyFundDialog> { { x => x.Amount, Amount } };
+
+        var dialog = await DialogService.ShowAsync<EmergencyFundDialog>("Reserva de emergência", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not { Canceled: false, Data: decimal newAmount }) return;
+
+        _isSaving = true;
+        try
+        {
+            var saveResult = await EmergencyFundService.UpdateAsync(UserId, CoupleId, newAmount, Fund?.Version);
+
+            if (saveResult is { Succeeded: true, Fund: { } saved })
+            {
+                await FundChanged.InvokeAsync(saved);
+                Snackbar.Add(saveResult.Message, Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add(saveResult.Message, saveResult.IsConflict ? Severity.Warning : Severity.Error);
+
+                // Mostra o valor que o parceiro acabou de salvar, para a pessoa decidir antes de editar de novo
+                if (saveResult.IsConflict)
+                {
+                    await FundChanged.InvokeAsync(await EmergencyFundService.GetAsync(CoupleId));
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Detalhes só no log: a mensagem da exceção pode expor estrutura interna (banco, consultas)
+            Logger.LogError(ex, "Falha ao salvar a reserva de emergência do casal {CoupleId}.", CoupleId);
+            Snackbar.Add("Não foi possível salvar. Tente novamente.", Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private static string FormatLocal(DateTime utc)
+    {
+        var value = DateTime.SpecifyKind(utc, DateTimeKind.Utc);
+        try
+        {
+            var brazil = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+            return TimeZoneInfo.ConvertTimeFromUtc(value, brazil).ToString("dd/MM/yyyy", Culture);
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return value.ToString("dd/MM/yyyy", Culture);
+        }
+    }
+}

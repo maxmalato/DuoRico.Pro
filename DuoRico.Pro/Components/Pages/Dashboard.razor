@@ -10,6 +10,7 @@
 @using DuoRico.Pro.Helpers
 
 @inject ITransactionService TransactionService
+@inject IEmergencyFundService EmergencyFundService
 @inject ICurrentUserService CurrentUser
 
 <PageTitle>Duo Rico Pro - Dashboard</PageTitle>
@@ -80,6 +81,11 @@
     </MudItem>
 </MudGrid>
 
+<EmergencyFundWidget @bind-Fund="InitialEmergencyFund"
+                     IsLoading="_isFundLoading"
+                     CoupleId="_currentCoupleId"
+                     UserId="@_currentUserId" />
+
 @* REGRA DOS 10% NO CARTÃO DE CRÉDITO *@
 <CreditCardHealthWidget TotalIncome="_summary.TotalIncome" Transactions="_monthlyTransactions" />
 
@@ -149,7 +155,9 @@
     private int _selectedYear = DateTime.Now.AddMonths(1).Year;
 
     private Guid _currentCoupleId = Guid.Empty;
+    private string _currentUserId = "";
     private bool _isLoading = true;
+    private bool _isFundLoading = true;
 
     private TransactionSummaryDto _summary = new();
 
@@ -164,6 +172,11 @@
     [PersistentState]
     public List<TransactionDto>? InitialTransactions { get; set; }
 
+    // Reserva de emergência: não depende do período, então é carregada uma vez só (fora de LoadDashboardDataAsync)
+    // e também passa da pré-renderização para o circuito interativo.
+    [PersistentState]
+    public EmergencyFundDto? InitialEmergencyFund { get; set; }
+
     private string MonthName => DateHelpers.GetMonthName(_selectedMonth);
 
     private string BalanceCaption => _summary.TotalIncome > 0
@@ -177,13 +190,17 @@
         if (currentUser?.CoupleId is { } coupleId)
         {
             _currentCoupleId = coupleId;
+            _currentUserId = currentUser.UserId;
 
             // Na pré-renderização consulta; no circuito interativo reaproveita o que veio dela
             InitialTransactions ??= await TransactionService.GetCoupleTransactionsForPeriodAsync(_currentCoupleId, _selectedMonth, _selectedYear);
             ApplyData(InitialTransactions);
+
+            InitialEmergencyFund ??= await EmergencyFundService.GetAsync(_currentCoupleId);
         }
 
         _isLoading = false;
+        _isFundLoading = false;
     }
 
     private async Task LoadDashboardDataAsync()

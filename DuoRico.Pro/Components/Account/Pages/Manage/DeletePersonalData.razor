@@ -115,6 +115,11 @@
                     dbContext.Transactions.RemoveRange(transactionsToDelete);
                     await dbContext.SaveChangesAsync();
                 }
+
+                // A reserva de emergência é do casal: sem ninguém restante, sai junto com a conta
+                await dbContext.EmergencyFunds
+                    .Where(f => f.CoupleId == coupleId)
+                    .ExecuteDeleteAsync();
             }
             else
             {

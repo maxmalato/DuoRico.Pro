@@ -52,7 +52,7 @@
     @* DESVINCULAR *@
     <MudText Typo="Typo.h6" Class="mb-1">Desvincular</MudText>
     <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
-        Cada um continua com as próprias transações, mas deixa de ver as do outro.
+        Cada um continua com as próprias transações, mas deixa de ver as do outro. A reserva de emergência é dividida ao meio entre vocês.
     </MudText>
     <form method="post" @formname="couple-unlink" @onsubmit="UnlinkAsync">
         <AntiforgeryToken />
@@ -97,7 +97,7 @@ else
     @* ACEITAR *@
     <MudText Typo="Typo.h6" Class="mb-1">Tenho um código</MudText>
     <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
-        Ao vincular, suas transações passam a ser visíveis para o casal.
+        Ao vincular, suas transações passam a ser visíveis para o casal e sua reserva de emergência é somada à do casal.
     </MudText>
 
     <MudGrid>

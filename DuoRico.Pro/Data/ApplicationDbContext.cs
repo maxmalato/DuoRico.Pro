@@ -10,6 +10,8 @@ namespace DuoRico.Pro.Data
     {
         public DbSet<Transaction> Transactions { get; set; }
 
+        public DbSet<EmergencyFund> EmergencyFunds { get; set; } = null!;
+
         public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -24,6 +26,19 @@ namespace DuoRico.Pro.Data
 
             builder.Entity<Transaction>()
                 .HasIndex(t => new { t.UserId, t.Year, t.Month });
+
+            // Uma reserva por casal. Se quem atualizou por último excluir a conta, a reserva continua (sem autor).
+            builder.Entity<EmergencyFund>(fund =>
+            {
+                fund.HasIndex(f => f.CoupleId).IsUnique();
+
+                fund.HasOne(f => f.UpdatedByUser)
+                    .WithMany()
+                    .HasForeignKey(f => f.UpdatedByUserId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                fund.Property(f => f.Version).IsRowVersion();
+            });
         }
     }
 }

@@ -142,6 +142,8 @@ builder.Services.AddMudServices();
 builder.Services.AddScoped<ThemeService>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<IEmergencyFundRepository, EmergencyFundRepository>();
+builder.Services.AddScoped<IEmergencyFundService, EmergencyFundService>();
 builder.Services.AddScoped<ICoupleService, CoupleService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddAuthRateLimiting();

@@ -25,6 +25,9 @@
     [Parameter] public Variant Variant { get; set; } = Variant.Text;
     [Parameter] public Margin Margin { get; set; } = Margin.None;
 
+    /// <summary>Aceita zero (ex.: zerar a reserva de emergência). Por padrão o valor deve ser maior que zero.</summary>
+    [Parameter] public bool AllowZero { get; set; }
+
     private ElementReference _container;
     private IJSObjectReference? _module;
     private string _text = string.Empty;
@@ -66,7 +69,7 @@
     }
 
     private string? Validate(string? text) =>
-        Parse(text) > 0 ? null : "O valor deve ser maior que zero.";
+        AllowZero || Parse(text) > 0 ? null : "O valor deve ser maior que zero.";
 
     // Considera apenas os dígitos: os dois últimos são os centavos.
     private static decimal Parse(string? text)
