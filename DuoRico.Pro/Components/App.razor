@@ -17,6 +17,21 @@
     @* Único script inline da página: liberado no CSP pelo nonce desta requisição (ver SecurityExtensions) *@
     <ImportMap nonce="@HttpContext.GetCspNonce()" />
     <link rel="icon" type="image/png" href="favicon.png" />
+    @* Card de compartilhamento (WhatsApp, LinkedIn, Facebook, X): os robôs leem o HTML do SSR, sem JS.
+       Igual para todas as rotas e só com dados públicos da marca: nada do usuário pode vazar para cá. *@
+    <meta name="description" content="@SiteDescription" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Duo Rico Pro" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="Duo Rico Pro" />
+    <meta property="og:description" content="@SiteDescription" />
+    <meta property="og:url" content="@BaseUrl" />
+    <meta property="og:image" content="@($"{BaseUrl}og-image.png")" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Logo do Duo Rico Pro" />
+    <meta name="twitter:card" content="summary_large_image" />
     <script src="@Assets["js/theme.js"]"></script>
     <HeadOutlet @rendermode="PageRenderMode" />
 </head>
@@ -33,6 +48,14 @@
 @code {
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
+
+    private const string SiteDescription =
+        "Controle financeiro para casais: receitas, despesas e reserva de emergência em um só lugar.";
+
+    // As redes exigem URL absoluta; o esquema já chega como https via ForwardedHeaders (proxy do Render).
+    // Caminho fixo da imagem (sem fingerprint do @Assets) para a URL não mudar a cada deploy e não invalidar o cache delas.
+    private string BaseUrl =>
+        $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}{HttpContext.Request.PathBase}/";
 
     private IComponentRenderMode? PageRenderMode =>
         HttpContext.AcceptsInteractiveRouting() ? InteractiveServer : null;
