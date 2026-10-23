@@ -331,6 +331,35 @@ ENTRYPOINT ["dotnet", "DuoRico.Pro.dll"]
 
 ---
 
+# 🏷️ Versionamento
+
+O projeto segue o [Versionamento Semântico](https://semver.org/lang/pt-BR/) (`MAJOR.MINOR.PATCH`) e as mudanças de cada versão ficam no [CHANGELOG.md](CHANGELOG.md).
+
+| Parte | Quando incrementar |
+|-------|--------------------|
+| `MAJOR` | Mudança incompatível (ex.: migration destrutiva ou que exige ação manual) |
+| `MINOR` | Nova funcionalidade compatível |
+| `PATCH` | Correção de bug ou ajuste sem nova funcionalidade |
+
+A fonte única da versão é a propriedade `<Version>` do `DuoRico.Pro.csproj`. Ela não depende do `.git`, então funciona no build Docker do Render, que usa apenas a pasta do projeto como contexto.
+
+## Checklist de release
+
+1. Atualizar `<Version>` no `DuoRico.Pro/DuoRico.Pro.csproj`
+2. No `CHANGELOG.md`, mover os itens de **Não lançado** para a nova versão, com a data
+3. Commitar as duas alterações juntas
+4. Criar e enviar a tag:
+
+```bash
+git tag -a v1.0.0 -m "v1.0.0"
+
+git push --follow-tags
+```
+
+A versão em execução aparece no **menu do usuário** (avatar), visível apenas para usuários autenticados — de propósito, para não expor publicamente qual versão está no ar.
+
+---
+
 # ☁️ Deploy
 
 O projeto foi preparado para deploy em plataformas modernas de hospedagem:

@@ -7,6 +7,10 @@
     <UserSecretsId>aspnet-DuoRico_Pro-e5ef3e99-e75f-40bb-8a10-f580a1d2c5bc</UserSecretsId>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <!-- Versão da release (SemVer); atualizar junto com o CHANGELOG.md -->
+    <Version>1.0.0</Version>
+    <!-- Sem o "+<sha do commit>" no InformationalVersion: a versão exibida na UI não expõe o hash -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>
