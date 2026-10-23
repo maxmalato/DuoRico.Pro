@@ -389,18 +389,27 @@ Para procedimentos de deploy, rollback, migrations em produção e recuperação
 # 📸 Screenshots
 
 <p align="center">
-  <img src="docs/images/login.png" width="45%">
-  <img src="docs/images/dashboard.png" width="45%">
+  <img src="docs/images/login.png" width="45%" alt="Tela de login">
+  <img src="docs/images/dashboard.png" width="45%" alt="Visão geral com saldo do mês, reserva de emergência, uso do cartão e últimas despesas">
 </p>
 
 <p align="center">
-  <img src="docs/images/income.png" width="45%">
-  <img src="docs/images/profile.png" width="45%">
+  <img src="docs/images/income.png" width="45%" alt="Lista de receitas do mês">
+  <img src="docs/images/expenses.png" width="45%" alt="Lista de despesas do mês com parcelamento">
 </p>
 
 <p align="center">
-  <img src="docs/images/new_transaction.png" width="45%">
-  <img src="docs/images/edit_transaction.png" width="45%">
+  <img src="docs/images/new_transaction.png" width="45%" alt="Diálogo de nova despesa">
+  <img src="docs/images/edit_transaction.png" width="45%" alt="Diálogo de edição de receita">
+</p>
+
+<p align="center">
+  <img src="docs/images/emergency_fund.png" width="45%" alt="Diálogo da reserva de emergência">
+  <img src="docs/images/couple.png" width="45%" alt="Tela de vínculo do casal">
+</p>
+
+<p align="center">
+  <img src="docs/images/profile.png" width="45%" alt="Tela de perfil">
 </p>
 
 ---

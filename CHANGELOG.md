@@ -15,6 +15,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 ### Alterado
 
 - README enxuto: links para a nova documentação, Dockerfile referenciado em vez de copiado, procedimento do certificado do Data Protection movido para o runbook.
+- Screenshots do README atualizados com dados fictícios, incluindo Despesas, Casal e Reserva de emergência.
 
 ## [1.0.0] - 2026-10-23
 
