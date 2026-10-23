@@ -6,6 +6,16 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+
+- Documentação técnica: arquitetura (`docs/architecture.md`), registros de decisão (`docs/adr/`) e runbook de operação (`docs/runbook.md`).
+- Política de segurança (`SECURITY.md`) com canal de reporte, gestão de segredos e diretrizes de LGPD.
+- `.editorconfig` com o padrão de código do projeto.
+
+### Alterado
+
+- README enxuto: links para a nova documentação, Dockerfile referenciado em vez de copiado, procedimento do certificado do Data Protection movido para o runbook.
+
 ## [1.0.0] - 2026-10-23
 
 Primeira versão numerada. Consolida tudo o que já estava em produção até esta data.

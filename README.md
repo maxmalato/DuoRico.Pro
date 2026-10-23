@@ -64,7 +64,7 @@ O projeto foi completamente reconstruído utilizando **Blazor (.NET 10)**, subst
 - Material Design com MudBlazor
 - Layout de Autenticação Personalizado
 - Navegação sem Dead Ends
-- 
+
 ---
 
 # 🏗️ Arquitetura
@@ -88,6 +88,8 @@ O projeto foi completamente reconstruído utilizando **Blazor (.NET 10)**, subst
 └─────────────────────┘
 ```
 
+Camadas, isolamento por casal, autenticação e acesso a dados estão detalhados em [docs/architecture.md](docs/architecture.md).
+
 ---
 
 # 🛠️ Stack Tecnológica
@@ -107,6 +109,19 @@ O projeto foi completamente reconstruído utilizando **Blazor (.NET 10)**, subst
 
 ---
 
+# 📚 Documentação
+
+| Documento | Conteúdo |
+|-----------|----------|
+| [docs/architecture.md](docs/architecture.md) | Camadas, isolamento por casal, autenticação, acesso a dados |
+| [docs/adr/](docs/adr/README.md) | Registros de decisão de arquitetura (o porquê de cada escolha) |
+| [docs/runbook.md](docs/runbook.md) | Deploy, rollback, migrations, rotação de segredos, incidentes |
+| [SECURITY.md](SECURITY.md) | Como reportar vulnerabilidades, controles, gestão de segredos, LGPD |
+| [CHANGELOG.md](CHANGELOG.md) | Mudanças de cada versão |
+| [.editorconfig](.editorconfig) | Padrão de código aplicado pela IDE e pelo `dotnet format` |
+
+---
+
 # 🔐 Segurança
 
 A aplicação segue boas práticas para ambientes de produção:
@@ -120,6 +135,8 @@ A aplicação segue boas práticas para ambientes de produção:
 - Tokens seguros para redefinição de senha
 - Confirmação de e-mail
 - Controle de sessões autenticadas
+
+Para reportar uma vulnerabilidade e conhecer a política de segredos, veja o [SECURITY.md](SECURITY.md).
 
 ---
 
@@ -298,36 +315,7 @@ docker run -p 8080:8080 duorico-pro
 
 ## Dockerfile
 
-```dockerfile
-# Build
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-
-WORKDIR /src
-
-COPY ["DuoRico.Pro.csproj", "./"]
-
-RUN dotnet restore "./DuoRico.Pro.csproj"
-
-COPY . .
-
-RUN dotnet publish "DuoRico.Pro.csproj" \
-    -c Release \
-    -o /app/publish \
-    /p:UseAppHost=false
-
-# Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
-
-WORKDIR /app
-
-EXPOSE 8080
-
-ENV ASPNETCORE_HTTP_PORTS=8080
-
-COPY --from=build /app/publish .
-
-ENTRYPOINT ["dotnet", "DuoRico.Pro.dll"]
-```
+O build é multi-stage (SDK para compilar, `aspnet` para rodar) e expõe a porta `8080`. O arquivo fica em [DuoRico.Pro/Dockerfile](DuoRico.Pro/Dockerfile). Execute os comandos acima de dentro da pasta `DuoRico.Pro/`, que é o contexto de build usado pelo Render.
 
 ---
 
@@ -392,14 +380,9 @@ O keyring do Data Protection (usado por login por cookie, reset de senha e 2FA) 
 
 Isso só é aplicado fora de `Development` — localmente (`dotnet run`, `dotnet ef`) o keyring padrão em disco continua funcionando sem nenhum certificado configurado, mesmo raciocínio do `Provider=Log` do `EmailSettings`.
 
-Gerar o certificado uma única vez (fora do repositório):
+A geração do certificado, a conversão para base64 e os cuidados na rotação estão no [runbook](docs/runbook.md#certificado-do-data-protection). Guardar o PFX original em um cofre de segredos — nunca no repositório.
 
-```bash
-openssl req -x509 -newkey rsa:2048 -nodes -keyout dp.key -out dp.crt -days 3650 -subj "/CN=DuoRico.Pro DataProtection"
-openssl pkcs12 -export -out dp.pfx -inkey dp.key -in dp.crt -passout pass:<senha-forte>
-```
-
-Converter o PFX para base64 e configurar `DataProtection__CertificateBase64` e `DataProtection__CertificatePassword` no painel do provedor. Guardar o PFX original em um cofre de segredos — nunca no repositório.
+Para procedimentos de deploy, rollback, migrations em produção e recuperação de incidentes, veja o [runbook de operação](docs/runbook.md).
 
 ---
 
