@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [1.0.1] - 2026-10-29
+
 ### Adicionado
 
 - Documentação técnica: arquitetura (`docs/architecture.md`), registros de decisão (`docs/adr/`) e runbook de operação (`docs/runbook.md`).
@@ -16,6 +18,10 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 - README enxuto: links para a nova documentação, Dockerfile referenciado em vez de copiado, procedimento do certificado do Data Protection movido para o runbook.
 - Screenshots do README atualizados com dados fictícios, incluindo Despesas, Casal e Reserva de emergência.
+
+### Corrigido
+
+- Botão "Sair" do menu do usuário não saía da tela no primeiro clique (o redirect de login era montado com `http://` e bloqueado pelo CSP) e retornava erro 500 no segundo. Autenticação e autorização agora rodam depois do `UseForwardedHeaders`.
 
 ## [1.0.0] - 2026-10-23
 
@@ -46,5 +52,6 @@ Primeira versão numerada. Consolida tudo o que já estava em produção até es
 - Proteção contra força bruta, Content Security Policy e prevenção de enumeração de contas no cadastro.
 - Remoção do provedor SQL Server não utilizado e atualização dos pacotes Microsoft para 10.0.13.
 
-[Não lançado]: https://github.com/maxmalato/DuoRico.Pro/compare/v1.0.0...HEAD
+[Não lançado]: https://github.com/maxmalato/DuoRico.Pro/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/maxmalato/DuoRico.Pro/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/maxmalato/DuoRico.Pro/releases/tag/v1.0.0

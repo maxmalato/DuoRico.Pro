@@ -183,6 +183,13 @@ app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages:
 // redirect em vez de 200 OK.
 app.UseSecurityHeaders(app.Environment);
 app.UseRateLimiter();
+
+// Explícitos para rodarem depois do UseForwardedHeaders: os implícitos do WebApplication entram no
+// início do pipeline, e o desafio do cookie montava o redirect de login com "http://" — bloqueado
+// pelo CSP form-action quando vinha de um formulário (ex.: "Sair" do menu do usuário).
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.UseAntiforgery();
 
 app.MapStaticAssets();

@@ -16,7 +16,8 @@ O **porquê** de cada decisão está registrado nos [ADRs](adr/README.md). A ope
 │ ASP.NET Core (.NET 10) — container Docker no Render          │
 │                                                              │
 │  Middleware: ForwardedHeaders → SecurityHeaders (CSP)        │
-│              → RateLimiter → Antiforgery                     │
+│              → RateLimiter → Authentication → Authorization  │
+│              → Antiforgery                                   │
 │                                                              │
 │  Components (Blazor Server + MudBlazor)                      │
 │      │  páginas de conta: SSR estático (Identity)            │
@@ -138,7 +139,7 @@ Os scripts próprios ficam em `wwwroot/js/` (`auth.js`, `theme.js`, `moneyMask.j
 
 ### Proxy reverso
 
-O TLS termina no proxy do Render. O `UseForwardedHeaders` (com `KnownProxies` vazio, porque o container só é alcançável pelo proxy) faz o app enxergar `https`, que é necessário para montar links de e-mail corretos. Não existe `UseHttpsRedirection`, porque ele quebraria o health check interno do Render.
+O TLS termina no proxy do Render. O `UseForwardedHeaders` (com `KnownProxies` vazio, porque o container só é alcançável pelo proxy) faz o app enxergar `https`, que é necessário para montar links de e-mail corretos. `UseAuthentication`/`UseAuthorization` são chamados explicitamente depois dele: os implícitos do `WebApplication` rodariam antes, e o redirect de login sairia em `http://` (bloqueado pelo CSP `form-action` quando vem de um formulário, como o "Sair"). Não existe `UseHttpsRedirection`, porque ele quebraria o health check interno do Render.
 
 ---
 
