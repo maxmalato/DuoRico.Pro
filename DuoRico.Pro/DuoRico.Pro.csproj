@@ -8,7 +8,7 @@
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <!-- Versão da release (SemVer); atualizar junto com o CHANGELOG.md -->
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <!-- Sem o "+<sha do commit>" no InformationalVersion: a versão exibida na UI não expõe o hash -->
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>

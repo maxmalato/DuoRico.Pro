@@ -6,6 +6,12 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [1.0.2] - 2026-10-29
+
+### Corrigido
+
+- Fonte Inter às vezes aparecia na fonte do sistema ao abrir o app. A URL da fonte não tinha fingerprint, então o `MapStaticAssets` a servia com `no-cache` e o navegador a revalidava a cada carga. O `@font-face` agora fica no `App.razor` com a URL do `@Assets` (cache imutável, igual à do preload), e um fallback com métricas da Inter reduz o "pulo" do texto durante a troca.
+
 ## [1.0.1] - 2026-10-29
 
 ### Adicionado
@@ -52,6 +58,7 @@ Primeira versão numerada. Consolida tudo o que já estava em produção até es
 - Proteção contra força bruta, Content Security Policy e prevenção de enumeração de contas no cadastro.
 - Remoção do provedor SQL Server não utilizado e atualização dos pacotes Microsoft para 10.0.13.
 
-[Não lançado]: https://github.com/maxmalato/DuoRico.Pro/compare/v1.0.1...HEAD
+[Não lançado]: https://github.com/maxmalato/DuoRico.Pro/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/maxmalato/DuoRico.Pro/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/maxmalato/DuoRico.Pro/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/maxmalato/DuoRico.Pro/releases/tag/v1.0.0

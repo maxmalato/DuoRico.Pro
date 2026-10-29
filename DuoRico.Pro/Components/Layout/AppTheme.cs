@@ -9,7 +9,7 @@ namespace DuoRico.Pro.Components.Layout;
 /// </summary>
 public static class AppTheme
 {
-    private static readonly string[] FontFamily = ["Inter", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"];
+    private static readonly string[] FontFamily = ["Inter", "Inter Fallback", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"];
 
     public static readonly MudTheme Default = new()
     {
